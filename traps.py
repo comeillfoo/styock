@@ -7,3 +7,7 @@ class StackUnderflowTrap(Exception):
 
 class InvalidAddressTrap(Exception):
     pass
+
+
+class IllegalInstructionTrap(Exception):
+    pass
