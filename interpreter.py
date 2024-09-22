@@ -3,6 +3,8 @@ import sys
 import argparse
 import pathlib
 
+import isa
+
 
 def args_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser()
@@ -13,9 +15,19 @@ def args_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    args = args_parser().parse_args()
-    with open(args.bytecode, mode='rb') as fp:
-        pass
+    program: list[isa.Instruction] = [
+        isa.Push(10),
+        isa.Push(20),
+        isa.Pop(),
+        isa.Pop(),
+        isa.Stop()
+    ]
+    ctx = isa.Context()
+    should_stop = False
+    while not should_stop:
+        ctx.ip += 1
+        should_stop = program[ctx.ip].execute(ctx)
+
     return 0
 
 
