@@ -3,3 +3,7 @@
 
 class StackUnderflowTrap(Exception):
     pass
+
+
+class InvalidAddressTrap(Exception):
+    pass

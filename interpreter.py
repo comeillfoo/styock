@@ -4,6 +4,7 @@ import argparse
 import pathlib
 
 import isa
+import traps
 
 
 def args_parser() -> argparse.ArgumentParser:
@@ -18,15 +19,17 @@ def main() -> int:
     program: list[isa.Instruction] = [
         isa.Push(10),
         isa.Push(20),
-        isa.Pop(),
-        isa.Pop(),
+        isa.Add(),
         isa.Stop()
     ]
     ctx = isa.Context()
-    should_stop = False
-    while not should_stop:
-        ctx.ip += 1
-        should_stop = program[ctx.ip].execute(ctx)
+    try:
+        should_stop = False
+        while not should_stop:
+            ctx.ip += 1
+            should_stop = program[ctx.ip - 1].execute(ctx)
+    except IndexError:
+        raise traps.InvalidAddressTrap
 
     return 0
 
