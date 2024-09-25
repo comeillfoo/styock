@@ -202,8 +202,8 @@ class Compare(Instruction):
 
 
 class Jump(Instruction):
-    def __init__(self, arg: np.uint64):
-        self.arg = arg
+    def __init__(self, arg: int):
+        self.arg = np.uint64(arg)
 
     def opcode(self) -> Opcode:
         return Opcode.JMP
@@ -222,8 +222,8 @@ class Jump(Instruction):
 
 
 class Call(Instruction):
-    def __init__(self, arg: np.uint64):
-        self.arg = arg
+    def __init__(self, arg: int):
+        self.arg = np.uint64(arg)
 
     def opcode(self) -> Opcode:
         return Opcode.CALL
