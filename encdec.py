@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import struct
 from typing import TypeVar
+import numpy as np
 
 import isa
 import traps
@@ -36,7 +37,7 @@ def decode_single(bytes: bytes) -> isa.Instruction:
     arg = raw_ins & PADDING_MASK
     try:
         cls = isa.INSTRUCTIONS_MAP.get(opcode)
-        return cls(arg) if cls.nargs() > 0 else cls()
+        return cls(np.uint64(arg)) if cls.nargs() > 0 else cls()
     except KeyError:
         raise traps.IllegalInstructionTrap
 

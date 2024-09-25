@@ -20,13 +20,20 @@ def main() -> int:
         isa.Push(10),
         isa.Push(20),
         isa.Add(),
-        isa.Stop()
+        isa.Call(1),
+        isa.Stop(),
+        isa.Swap(),
+        isa.Push(40),
+        isa.Add(),
+        isa.Swap(),
+        isa.Ret()
     ]
     ctx = isa.Context()
     try:
         should_stop = False
         while not should_stop:
             ctx.ip += 1
+            print('ip =', ctx.ip - 1, 'stack:', ctx.stack)
             should_stop = program[ctx.ip - 1].execute(ctx)
     except IndexError:
         raise traps.InvalidAddressTrap

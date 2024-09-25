@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
+import numpy as np
 
 import traps
 
@@ -17,13 +18,15 @@ class Opcode(IntEnum):
     CMP = auto()
     JMP = auto()
     # TODO: JZ, JNZ, JGT and etc...
+    CALL = auto()
+    RET = auto()
     _MAXOP = auto()
 
 
 class Context:
     def __init__(self):
         self.stack = []
-        self.ip = 0
+        self.ip = np.uint64(0)
 
 
 class Instruction(ABC):
@@ -32,7 +35,7 @@ class Instruction(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def args(self) -> list[int]:
+    def args(self) -> list[np.uint64]:
         raise NotImplementedError
 
     @abstractmethod
@@ -49,7 +52,7 @@ class NoOperation(Instruction):
     def opcode(self) -> Opcode:
         return Opcode.NOP
 
-    def args(self) -> list[int]:
+    def args(self) -> list[np.uint64]:
         return []
 
     def execute(self, ctx: Context) -> bool:
@@ -62,16 +65,16 @@ class NoOperation(Instruction):
 
 class Push(Instruction):
     def __init__(self, arg: int):
-        self.arg = arg
+        self.arg = np.uint64(arg)
 
     def opcode(self) -> Opcode:
         return Opcode.PUSH
 
-    def args(self) -> list[int]:
+    def args(self) -> list[np.uint64]:
         return [self.arg]
 
     def execute(self, ctx: Context) -> bool:
-        ctx.stack.append(self.args)
+        ctx.stack.append(self.arg)
         return False
 
     @classmethod
@@ -83,7 +86,7 @@ class Pop(Instruction):
     def opcode(self) -> Opcode:
         return Opcode.POP
 
-    def args(self) -> list[int]:
+    def args(self) -> list[np.uint64]:
         return []
 
     def execute(self, ctx: Context) -> bool:
@@ -102,7 +105,7 @@ class Swap(Instruction):
     def opcode(self) -> Opcode:
         return Opcode.SWAP
 
-    def args(self) -> list[int]:
+    def args(self) -> list[np.uint64]:
         return []
 
     def execute(self, ctx: Context) -> bool:
@@ -124,7 +127,7 @@ class Duplicate(Instruction):
     def opcode(self) -> Opcode:
         return Opcode.DUP
 
-    def args(self) -> list[int]:
+    def args(self) -> list[np.uint64]:
         return []
 
     def execute(self, ctx: Context) -> bool:
@@ -144,7 +147,7 @@ class Stop(Instruction):
     def opcode(self) -> Opcode:
         return Opcode.STOP
 
-    def args(self) -> list[int]:
+    def args(self) -> list[np.uint64]:
         return []
 
     def execute(self, ctx: Context) -> bool:
@@ -159,7 +162,7 @@ class Add(Instruction):
     def opcode(self) -> Opcode:
         return Opcode.ADD
 
-    def args(self) -> list[int]:
+    def args(self) -> list[np.uint64]:
         return []
 
     def execute(self, ctx: Context) -> bool:
@@ -181,14 +184,14 @@ class Compare(Instruction):
     def opcode(self) -> Opcode:
         return Opcode.CMP
 
-    def args(self) -> list[int]:
+    def args(self) -> list[np.uint64]:
         return []
 
     def execute(self, ctx: Context) -> bool:
         try:
             a = ctx.stack.pop()
             b = ctx.stack.pop()
-            ctx.stack.append(1 if a > b else (-1 if a < b else 0))
+            ctx.stack.append(a - b)
         except IndexError:
             raise traps.StackUnderflowTrap
         return False
@@ -199,13 +202,13 @@ class Compare(Instruction):
 
 
 class Jump(Instruction):
-    def __init__(self, arg: int):
+    def __init__(self, arg: np.uint64):
         self.arg = arg
 
     def opcode(self) -> Opcode:
         return Opcode.JMP
 
-    def args(self) -> list[int]:
+    def args(self) -> list[np.uint64]:
         return [self.arg]
 
     def execute(self, ctx: Context) -> bool:
@@ -218,6 +221,46 @@ class Jump(Instruction):
 # TODO: conditional branches
 
 
+class Call(Instruction):
+    def __init__(self, arg: np.uint64):
+        self.arg = arg
+
+    def opcode(self) -> Opcode:
+        return Opcode.CALL
+
+    def args(self) -> list[np.uint64]:
+        return [self.arg]
+
+    def execute(self, ctx: Context) -> bool:
+        ctx.stack.append(ctx.ip)
+        ctx.ip += self.arg
+        return False
+
+    @classmethod
+    def nargs(cls) -> int:
+        return 1
+
+
+class Ret(Instruction):
+    def opcode(self) -> Opcode:
+        return Opcode.RET
+
+    def args(self) -> list[np.uint64]:
+        return []
+
+    def execute(self, ctx: Context) -> bool:
+        try:
+            return_address = ctx.stack.pop()
+            ctx.ip = return_address
+        except IndexError:
+            raise traps.StackUnderflowTrap
+        return False
+
+    @classmethod
+    def nargs(cls) -> int:
+        return 0
+
+
 INSTRUCTIONS_MAP = {
     Opcode.NOP: NoOperation,
     Opcode.PUSH: Push,
@@ -227,5 +270,7 @@ INSTRUCTIONS_MAP = {
     Opcode.STOP: Stop,
     Opcode.ADD: Add,
     Opcode.CMP: Compare,
-    Opcode.JMP: Jump
+    Opcode.JMP: Jump,
+    Opcode.CALL: Call,
+    Opcode.RET: Ret
 }
