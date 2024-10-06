@@ -25,7 +25,8 @@ class Opcode(IntEnum):
 
 class Context:
     def __init__(self):
-        self.stack = []
+        self.args_stack = []
+        self.reta_stack = []
         self.ip = np.uint64(0)
 
 
@@ -74,7 +75,7 @@ class Push(Instruction):
         return [self.arg]
 
     def execute(self, ctx: Context) -> bool:
-        ctx.stack.append(self.arg)
+        ctx.args_stack.append(self.arg)
         return False
 
     @classmethod
@@ -91,7 +92,7 @@ class Pop(Instruction):
 
     def execute(self, ctx: Context) -> bool:
         try:
-            ctx.stack.pop()
+            ctx.args_stack.pop()
         except IndexError:
             raise traps.StackUnderflowTrap
         return False
@@ -110,10 +111,10 @@ class Swap(Instruction):
 
     def execute(self, ctx: Context) -> bool:
         try:
-            a = ctx.stack.pop()
-            b = ctx.stack.pop()
-            ctx.stack.append(a)
-            ctx.stack.append(b)
+            a = ctx.args_stack.pop()
+            b = ctx.args_stack.pop()
+            ctx.args_stack.append(a)
+            ctx.args_stack.append(b)
         except IndexError:
             raise traps.StackUnderflowTrap
         return False
@@ -131,11 +132,11 @@ class Duplicate(Instruction):
         return []
 
     def execute(self, ctx: Context) -> bool:
-        if len(ctx.stack) == 0:
+        if len(ctx.args_stack) == 0:
             raise traps.StackUnderflowTrap
 
-        arg = ctx.stack[-1]
-        ctx.stack.append(arg)
+        arg = ctx.args_stack[-1]
+        ctx.args_stack.append(arg)
         return False
 
     @classmethod
@@ -167,9 +168,9 @@ class Add(Instruction):
 
     def execute(self, ctx: Context) -> bool:
         try:
-            a = ctx.stack.pop()
-            b = ctx.stack.pop()
-            ctx.stack.append(a + b)
+            a = ctx.args_stack.pop()
+            b = ctx.args_stack.pop()
+            ctx.args_stack.append(a + b)
         except IndexError:
             raise traps.StackUnderflowTrap
         return False
@@ -189,9 +190,9 @@ class Compare(Instruction):
 
     def execute(self, ctx: Context) -> bool:
         try:
-            a = ctx.stack.pop()
-            b = ctx.stack.pop()
-            ctx.stack.append(a - b)
+            a = ctx.args_stack.pop()
+            b = ctx.args_stack.pop()
+            ctx.args_stack.append(a - b)
         except IndexError:
             raise traps.StackUnderflowTrap
         return False
@@ -232,7 +233,7 @@ class Call(Instruction):
         return [self.arg]
 
     def execute(self, ctx: Context) -> bool:
-        ctx.stack.append(ctx.ip)
+        ctx.reta_stack.append(ctx.ip)
         ctx.ip += self.arg
         return False
 
@@ -250,8 +251,7 @@ class Ret(Instruction):
 
     def execute(self, ctx: Context) -> bool:
         try:
-            return_address = ctx.stack.pop()
-            ctx.ip = return_address
+            ctx.ip = ctx.reta_stack.pop()
         except IndexError:
             raise traps.StackUnderflowTrap
         return False

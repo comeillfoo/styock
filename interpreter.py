@@ -1,49 +1,58 @@
 #!/usr/bin/env python3
-import sys
-import argparse
-import pathlib
+from typing import Tuple
+import numpy as np
+
 
 import isa
-import traps
 
 
-def args_parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser()
+class Interpreter:
+    def __init__(self):
+        self.ctx = isa.Context()
+        self.program = []
+        self.is_halted = True
+        self.breakpoints = []
+        self.breaklines = set()
 
-    p.add_argument('bytecode', type=pathlib.Path, metavar='PATH',
-                   help='Path to program in bytecode program')
-    return p
+    def load_program(self, program: list[isa.Instruction]):
+        self.program = program
+        self.is_halted = False
 
+    def info_breakpoints(self) -> list[Tuple[int, isa.Instruction]]:
+        return [ (line_no, self.program[line_no]) for line_no in self.breakpoints ]
 
-def main() -> int:
-    program: list[isa.Instruction] = [
-        isa.Push(10),
-        isa.Push(20),
-        isa.Add(),
-        isa.Call(1),
-        isa.Stop(),
-        isa.Swap(),
-        isa.Push(40),
-        isa.Add(),
-        isa.Swap(),
-        isa.Ret()
-    ]
-    ctx = isa.Context()
-    try:
-        should_stop = False
-        while not should_stop:
-            ctx.ip += 1
-            print('ip =', ctx.ip - 1, 'stack:', ctx.stack)
-            should_stop = program[ctx.ip - 1].execute(ctx)
-    except IndexError:
-        raise traps.InvalidAddressTrap
+    def _info_stack(self, stack: list[np.uint64]) -> list:
+        pass
 
-    return 0
+    def info_args(self) -> list:
+        return self._info_stack(self.ctx.args_stack)
 
+    def info_rets(self):
+        return self._info_stack(self.ctx.reta_stack)
 
-if __name__ == '__main__':
-    try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        print('Aborted!', file=sys.stderr)
-        sys.exit(1)
+    def is_encountered_breakpoint(self) -> bool:
+        return self.ctx.ip in self.breaklines
+
+    def next(self):
+        self.ctx.ip += 1
+        self.is_halted = self.program[self.ctx.ip - 1].execute(self.ctx)
+
+    def _continue(self):
+        while not self.is_halted:
+            self.next()
+            if self.is_encountered_breakpoint():
+                break
+
+    def run(self):
+        self._continue()
+
+    def break_on(self, line_no: int) -> int:
+        if line_no < 0 or line_no >= len(self.program):
+            return -1
+        self.breakpoints.append(line_no)
+        self.breaklines.add(line_no)
+        return len(self.breakpoints) - 1
+
+    def delete_bp(self, breakpoint: int):
+        line_no = self.breakpoints.pop(breakpoint)
+        self.breaklines.remove(line_no)
