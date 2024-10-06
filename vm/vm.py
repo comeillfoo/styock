@@ -3,9 +3,9 @@ import sys
 import argparse
 import pathlib
 
-import isa
-import traps
-from interpreter import Interpreter
+import vm.ISA as ISA
+import vm.Traps as Traps
+from vm.Interpreter import Interpreter
 
 
 def args_parser() -> argparse.ArgumentParser:
@@ -17,22 +17,22 @@ def args_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    program: list[isa.Instruction] = [
-        isa.Push(10),
-        isa.Push(20),
-        isa.Add(),
-        isa.Call(1),
-        isa.Stop(),
-        isa.Push(40),
-        isa.Add(),
-        isa.Ret()
+    program: list[ISA.Instruction] = [
+        ISA.Push(10),
+        ISA.Push(20),
+        ISA.Add(),
+        ISA.Call(1),
+        ISA.Stop(),
+        ISA.Push(40),
+        ISA.Add(),
+        ISA.Ret()
     ]
     vm = Interpreter()
     vm.load_program(program)
     try:
         vm.run()
     except IndexError:
-        raise traps.InvalidAddressTrap
+        raise Traps.InvalidAddressTrap
 
     return 0
 

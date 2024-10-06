@@ -3,22 +3,22 @@ from typing import Tuple
 import numpy as np
 
 
-import isa
+import vm.ISA as ISA
 
 
 class Interpreter:
     def __init__(self):
-        self.ctx = isa.Context()
+        self.ctx = ISA.Context()
         self.program = []
         self.is_halted = True
         self.breakpoints = []
         self.breaklines = set()
 
-    def load_program(self, program: list[isa.Instruction]):
+    def load_program(self, program: list[ISA.Instruction]):
         self.program = program
         self.is_halted = False
 
-    def info_breakpoints(self) -> list[Tuple[int, isa.Instruction]]:
+    def info_breakpoints(self) -> list[Tuple[int, ISA.Instruction]]:
         return [ (line_no, self.program[line_no]) for line_no in self.breakpoints ]
 
     def _info_stack(self, stack: list[np.uint64]) -> list:

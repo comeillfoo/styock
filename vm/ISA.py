@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from enum import IntEnum, auto
 import numpy as np
 
-import traps
+import vm.Traps as Traps
 
 
 class Opcode(IntEnum):
@@ -94,7 +94,7 @@ class Pop(Instruction):
         try:
             ctx.args_stack.pop()
         except IndexError:
-            raise traps.StackUnderflowTrap
+            raise Traps.StackUnderflowTrap
         return False
 
     @classmethod
@@ -116,7 +116,7 @@ class Swap(Instruction):
             ctx.args_stack.append(a)
             ctx.args_stack.append(b)
         except IndexError:
-            raise traps.StackUnderflowTrap
+            raise Traps.StackUnderflowTrap
         return False
 
     @classmethod
@@ -133,7 +133,7 @@ class Duplicate(Instruction):
 
     def execute(self, ctx: Context) -> bool:
         if len(ctx.args_stack) == 0:
-            raise traps.StackUnderflowTrap
+            raise Traps.StackUnderflowTrap
 
         arg = ctx.args_stack[-1]
         ctx.args_stack.append(arg)
@@ -172,7 +172,7 @@ class Add(Instruction):
             b = ctx.args_stack.pop()
             ctx.args_stack.append(a + b)
         except IndexError:
-            raise traps.StackUnderflowTrap
+            raise Traps.StackUnderflowTrap
         return False
 
     @classmethod
@@ -194,7 +194,7 @@ class Compare(Instruction):
             b = ctx.args_stack.pop()
             ctx.args_stack.append(a - b)
         except IndexError:
-            raise traps.StackUnderflowTrap
+            raise Traps.StackUnderflowTrap
         return False
 
     @classmethod
@@ -253,7 +253,7 @@ class Ret(Instruction):
         try:
             ctx.ip = ctx.reta_stack.pop()
         except IndexError:
-            raise traps.StackUnderflowTrap
+            raise Traps.StackUnderflowTrap
         return False
 
     @classmethod

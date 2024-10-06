@@ -1,0 +1,7 @@
+*
+!.gitignore
+!*.g4
+!rustyc.py
+!Makefile
+!libs
+!libs/.gitkeep
