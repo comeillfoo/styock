@@ -25,7 +25,7 @@ block_expression : '{' statement* '}';
 function_argument : IDENTIFIER type_annotation ;
 function_arguments : function_argument
     | function_argument ',' function_arguments ;
-function : 'fn' IDENTIFIER '(' function_arguments ')' ('->' types)? block_expression;
+function : 'fn' IDENTIFIER '(' function_arguments? ')' ('->' types)? block_expression;
 
 /*
  * Lexer rules
