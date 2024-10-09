@@ -2,57 +2,55 @@ grammar Rusty;
 /*
  * Parser rules
  */
-tuple_type : '(' ')' | '(' type (',' type)* ')';
-type : UINT_TYPES | SINT_TYPES | FLOAT_TYPES | BOOL_TYPE | tuple_type ;
+crate : item* ; /* aka starting rule */
+item : function ;
 
-/* https://doc.rust-lang.org/reference/expressions/literal-expr.html */
-literal_expression : INTEGER_LITERAL
-    | 'true' | 'false';
-negation_expression : '-' expression | '!' expression ;
-arithmetic_or_logical_expression
-    : expression '+' expression
-    | expression '-' expression
-    | expression '*' expression
-    | expression '/' expression
-    | expression '%' expression
-    | expression '&' expression
-    | expression '|' expression
-    | expression '^' expression
-    | expression '<<' expression
-    | expression '>>' expression ;
-comparison_expression
-    : expression '==' expression
-    | expression '!=' expression
-    | expression '>' expression
-    | expression '<' expression
-    | expression '>=' expression
-    | expression '<=' expression ;
-lazy_boolean_expression
-    : expression '||' expression
-    | expression '&&' expression ;
-/* https://doc.rust-lang.org/reference/expressions/operator-expr.html */
-operator_expression : negation_expression | arithmetic_or_logical_expression
-    | comparison_expression | lazy_boolean_expression ;
-break_expression : 'break' ;
-continue_expression : 'continue' ;
-return_expression : 'return' expression? ;
-expression_without_block : literal_expression | operator_expression
-    | break_expression | continue_expression | return_expression ;
+tuple_type : '(' ')' | '(' type (',' type)* ')';
+type : 'usize' | 'isize' | UINT_TYPES | SINT_TYPES | FLOAT_TYPES | BOOL_TYPE | tuple_type ;
+
+negation_ops : ( '-' | '!' ) ;
+arithmetic_or_logical_ops
+    : ( '+' | '-' | '*' | '/' | '%' | '&' | '|' | '^' | '<<' | '>>' ) ;
+comparison_ops : ( '==' | '!=' | '>' | '<' | '>=' | '<=' ) ;
+lazy_boolean_ops : ( '||' | '&&' ) ;
+binary_ops
+    : arithmetic_or_logical_ops
+    | comparison_ops
+    | lazy_boolean_ops ;
+call_params : expression (',' expression)* ;
 
 if_expression : 'if' expression block_expression ('else' (block_expression | if_expression))?;
-iterator_loop_expression : 'for' 'mut'? IDENTIFIER 'in' expression block_expression ;
-predicate_loop_expression : 'while' expression block_expression ;
-infinite_loop_expression : 'loop' block_expression ;
-loop_expression : infinite_loop_expression | predicate_loop_expression ;
-expression_with_block : block_expression | loop_expression | if_expression ;
-/* https://doc.rust-lang.org/reference/expressions.html */
-expression : expression_with_block | expression_without_block ;
 
-expression_statement : expression_with_block ';' | expression_without_block ';' ;
+expression_with_block
+    : block_expression
+    | ('loop' | (('while' | 'for' 'mut'? IDENTIFIER 'in') expression)) block_expression
+    | if_expression ;
+
+/* https://doc.rust-lang.org/reference/expressions.html */
+expression
+/* https://doc.rust-lang.org/reference/expressions/literal-expr.html */
+    : INTEGER_LITERAL | FLOAT_LITERAL | 'true' | 'false'
+/* https://doc.rust-lang.org/reference/expressions/path-expr.html */
+    | IDENTIFIER
+/* https://doc.rust-lang.org/reference/expressions/operator-expr.html */
+    | negation_ops expression
+    | expression binary_ops expression
+/* https://doc.rust-lang.org/reference/expressions/grouped-expr.html */
+    | '(' expression ')'
+/* https://doc.rust-lang.org/reference/expressions/call-expr.html */
+    | expression '(' call_params? ')'
+    | 'continue' | 'break' | 'return' expression?
+    | expression_with_block ;
+
+
+expression_statement
+    : expression ';'
+    | expression_with_block ';'? ;
 let_statement : 'let' 'mut'? IDENTIFIER (':' type)? ('=' expression)? ';' ;
 
 statement : ';' | let_statement | expression_statement ;
-block_expression : '{' statement* '}';
+statements : statement+ | statement* expression ;
+block_expression : '{' statements? '}';
 
 function_return_type : '->' type ;
 function_param : IDENTIFIER ':' type ;
@@ -76,10 +74,10 @@ FLOAT_TYPES : 'f' FLOAT_BIT_DEPTHS ;
 BOOL_TYPE : 'bool' ;
 
 /* https://doc.rust-lang.org/reference/tokens.html#literals */
-DEC_LITERAL : DEC_DIGIT (DEC_DIGIT| '_')* ;
-HEX_LITERAL : '0x' (HEX_DIGIT | '_')* HEX_DIGIT (HEX_DIGIT | '_')* ;
-OCT_LITERAL : '0o' (OCT_DIGIT | '_')* OCT_DIGIT (OCT_DIGIT | '_')* ;
-BIN_LITERAL : '0b' (BIN_DIGIT | '_')* BIN_DIGIT (BIN_DIGIT | '_')*;
+fragment DEC_LITERAL : DEC_DIGIT (DEC_DIGIT| '_')* ;
+fragment HEX_LITERAL : '0x' (HEX_DIGIT | '_')* HEX_DIGIT (HEX_DIGIT | '_')* ;
+fragment OCT_LITERAL : '0o' (OCT_DIGIT | '_')* OCT_DIGIT (OCT_DIGIT | '_')* ;
+fragment BIN_LITERAL : '0b' (BIN_DIGIT | '_')* BIN_DIGIT (BIN_DIGIT | '_')*;
 INTEGER_LITERAL : (BIN_LITERAL | OCT_LITERAL | DEC_LITERAL
     | HEX_LITERAL) (UINT_TYPES | SINT_TYPES)? ;
 
