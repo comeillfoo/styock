@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import sys
+import argparse
+import pathlib
 import antlr4
 
 from libs.RustyLexer import RustyLexer
@@ -7,20 +9,26 @@ from libs.RustyListener import RustyListener
 from libs.RustyParser import RustyParser
 
 
-class RustyPrintListener(RustyListener):
-    def enterHi(self, ctx: RustyParser.HiContext):
-        print('Hello', ctx.ID())
+class RustyListenerImpl(RustyListener):
+    pass
+
+
+def args_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser('rustyc')
+    p.add_argument('file', type=pathlib.Path, help='Path to source file')
+    return p
 
 
 def main() -> int:
-    lexer = RustyLexer(antlr4.StdinStream(encoding='utf-8'))
+    args = args_parser().parse_args()
+    lexer = RustyLexer(antlr4.FileStream(args.file, encoding='utf-8'))
     token_stream = antlr4.CommonTokenStream(lexer)
     parser = RustyParser(token_stream)
 
-    tree = parser.hi()
-    printer = RustyPrintListener()
+    tree = parser.crate()
+    listener = RustyListenerImpl()
     walker = antlr4.ParseTreeWalker()
-    walker.walk(printer, tree)
+    walker.walk(listener, tree)
     return 0
 
 if __name__ == '__main__':
