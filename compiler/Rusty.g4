@@ -2,54 +2,90 @@ grammar Rusty;
 /*
  * Parser rules
  */
-types : UINT_TYPES | SINT_TYPES | FLOAT_TYPES | BOOL_TYPE | UNIT_TYPE ;
+tuple_type : '(' ')' | '(' type (',' type)* ')';
+type : UINT_TYPES | SINT_TYPES | FLOAT_TYPES | BOOL_TYPE | tuple_type ;
 
-binary_op : '+' | '-' | '*' | '/' | '%' ;
-unary_op : '-' ;
 /* https://doc.rust-lang.org/reference/expressions/literal-expr.html */
-literal_expression :
-    | INTEGER_LITERAL
+literal_expression : INTEGER_LITERAL
     | 'true' | 'false';
+negation_expression : '-' expression | '!' expression ;
+arithmetic_or_logical_expression
+    : expression '+' expression
+    | expression '-' expression
+    | expression '*' expression
+    | expression '/' expression
+    | expression '%' expression
+    | expression '&' expression
+    | expression '|' expression
+    | expression '^' expression
+    | expression '<<' expression
+    | expression '>>' expression ;
+comparison_expression
+    : expression '==' expression
+    | expression '!=' expression
+    | expression '>' expression
+    | expression '<' expression
+    | expression '>=' expression
+    | expression '<=' expression ;
+lazy_boolean_expression
+    : expression '||' expression
+    | expression '&&' expression ;
+/* https://doc.rust-lang.org/reference/expressions/operator-expr.html */
+operator_expression : negation_expression | arithmetic_or_logical_expression
+    | comparison_expression | lazy_boolean_expression ;
+break_expression : 'break' ;
+continue_expression : 'continue' ;
+return_expression : 'return' expression? ;
+expression_without_block : literal_expression | operator_expression
+    | break_expression | continue_expression | return_expression ;
 
-expression_without_block : literal_expression ;
-expression_with_block : block_expression ;
+if_expression : 'if' expression block_expression ('else' (block_expression | if_expression))?;
+iterator_loop_expression : 'for' 'mut'? IDENTIFIER 'in' expression block_expression ;
+predicate_loop_expression : 'while' expression block_expression ;
+infinite_loop_expression : 'loop' block_expression ;
+loop_expression : infinite_loop_expression | predicate_loop_expression ;
+expression_with_block : block_expression | loop_expression | if_expression ;
+/* https://doc.rust-lang.org/reference/expressions.html */
 expression : expression_with_block | expression_without_block ;
 
-type_annotation : ':' types ;
-variable_binding : 'let' 'mut'? IDENTIFIER type_annotation? '='
-    (block_expression | expression) ;
+expression_statement : expression_with_block ';' | expression_without_block ';' ;
+let_statement : 'let' 'mut'? IDENTIFIER (':' type)? ('=' expression)? ';' ;
 
-statement : (variable_binding | expression) ';' ;
+statement : ';' | let_statement | expression_statement ;
 block_expression : '{' statement* '}';
 
-function_argument : IDENTIFIER type_annotation ;
-function_arguments : function_argument
-    | function_argument ',' function_arguments ;
-function : 'fn' IDENTIFIER '(' function_arguments? ')' ('->' types)? block_expression;
+function_return_type : '->' type ;
+function_param : IDENTIFIER ':' type ;
+function_parameters : function_param (',' function_param)* ;
+function : 'fn' IDENTIFIER '(' function_parameters? ')' function_return_type? (block_expression | ';');
 
 /*
  * Lexer rules
  */
 WHITESPACE : (' ' | '\t' | '\n' | '\r') -> skip;
 
-fragment NON_ZERO_DIGIT : [1-9] ;
-fragment DIGIT : NON_ZERO_DIGIT | '0' ;
-fragment HEX_DIGIT : DIGIT | [a-f] | [A-F] ;
+fragment DEC_DIGIT : [0-9] ;
+fragment HEX_DIGIT : DEC_DIGIT | [a-f] | [A-F] ;
+fragment OCT_DIGIT : [0-7] ;
+fragment BIN_DIGIT : [0-1] ;
 fragment FLOAT_BIT_DEPTHS : '32' | '64' ;
 fragment INTEGER_BIT_DEPTHS : '8' | '16' | FLOAT_BIT_DEPTHS | '128' ;
 UINT_TYPES : 'u' INTEGER_BIT_DEPTHS ;
 SINT_TYPES : 'i' INTEGER_BIT_DEPTHS ;
 FLOAT_TYPES : 'f' FLOAT_BIT_DEPTHS ;
 BOOL_TYPE : 'bool' ;
-UNIT_TYPE : '()' ;
 
 /* https://doc.rust-lang.org/reference/tokens.html#literals */
-DECIMAL_LITERAL : NON_ZERO_DIGIT DIGIT* ;
-HEXADECIMAL_LITERAL : '0x' HEX_DIGIT+ ;
-OCTAL_LITERAL : '0o' [0-7]+ ;
-BINARY_LITERAL : '0b' [0-1]+ ;
-INTEGER_LITERAL : (BINARY_LITERAL | OCTAL_LITERAL | DECIMAL_LITERAL
-    | HEXADECIMAL_LITERAL) (UINT_TYPES | SINT_TYPES)? ;
+DEC_LITERAL : DEC_DIGIT (DEC_DIGIT| '_')* ;
+HEX_LITERAL : '0x' (HEX_DIGIT | '_')* HEX_DIGIT (HEX_DIGIT | '_')* ;
+OCT_LITERAL : '0o' (OCT_DIGIT | '_')* OCT_DIGIT (OCT_DIGIT | '_')* ;
+BIN_LITERAL : '0b' (BIN_DIGIT | '_')* BIN_DIGIT (BIN_DIGIT | '_')*;
+INTEGER_LITERAL : (BIN_LITERAL | OCT_LITERAL | DEC_LITERAL
+    | HEX_LITERAL) (UINT_TYPES | SINT_TYPES)? ;
+
+fragment FLOAT_EXPONENT : ('e' | 'E') ('+' | '-')? (DEC_DIGIT | '_')* DEC_DIGIT (DEC_DIGIT | '_')*;
+FLOAT_LITERAL : DEC_LITERAL '.' | DEC_LITERAL '.' DEC_LITERAL
+    | DEC_LITERAL ('.' DEC_LITERAL)? FLOAT_EXPONENT FLOAT_TYPES?;
 
 /* https://doc.rust-lang.org/reference/identifiers.html */
 fragment IDENTIFIER_START : [A-Z] | [a-z] | '_' ;
