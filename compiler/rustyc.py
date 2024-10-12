@@ -5,12 +5,9 @@ import pathlib
 import antlr4
 
 from libs.RustyLexer import RustyLexer
-from libs.RustyListener import RustyListener
 from libs.RustyParser import RustyParser
 
-
-class RustyListenerImpl(RustyListener):
-    pass
+from frontend import FERListener
 
 
 def args_parser() -> argparse.ArgumentParser:
@@ -26,10 +23,11 @@ def main() -> int:
     parser = RustyParser(token_stream)
 
     tree = parser.crate()
-    listener = RustyListenerImpl()
+    listener = FERListener(sys.stdout)
     walker = antlr4.ParseTreeWalker()
     walker.walk(listener, tree)
     return 0
+
 
 if __name__ == '__main__':
     try:

@@ -6,13 +6,19 @@ crate : item* ; /* aka starting rule */
 item : function ;
 
 tuple_type : '(' ')' | '(' type (',' type)* ')';
-type : 'usize' | 'isize' | UINT_TYPES | SINT_TYPES | FLOAT_TYPES | BOOL_TYPE | tuple_type ;
+type
+    : UINT_TYPES  # UnsignedIntegerType
+    | SINT_TYPES  # SignedIntegerType
+    | FLOAT_TYPES # FloatType
+    | BOOL_TYPE   # BooleanType
+    | tuple_type  # TupleType
+    ;
 
 negation_ops : ( '-' | '!' ) ;
 arithmetic_or_logical_ops
-    : ( '+' | '-' | '*' | '/' | '%' | '&' | '|' | '^' | '<<' | '>>' ) ;
+    : ( '*' | '/' | '%' | '+' | '-' | '<<' | '>>' | '&' | '^' | '|' ) ;
 comparison_ops : ( '==' | '!=' | '>' | '<' | '>=' | '<=' ) ;
-lazy_boolean_ops : ( '||' | '&&' ) ;
+lazy_boolean_ops : ( '&&' | '||' ) ;
 binary_ops
     : arithmetic_or_logical_ops
     | comparison_ops
@@ -32,13 +38,13 @@ expression
     : INTEGER_LITERAL | FLOAT_LITERAL | 'true' | 'false'
 /* https://doc.rust-lang.org/reference/expressions/path-expr.html */
     | IDENTIFIER
+/* https://doc.rust-lang.org/reference/expressions/call-expr.html */
+    | expression '(' call_params? ')'
+/* https://doc.rust-lang.org/reference/expressions/grouped-expr.html */
+    | '(' expression ')'
 /* https://doc.rust-lang.org/reference/expressions/operator-expr.html */
     | negation_ops expression
     | expression binary_ops expression
-/* https://doc.rust-lang.org/reference/expressions/grouped-expr.html */
-    | '(' expression ')'
-/* https://doc.rust-lang.org/reference/expressions/call-expr.html */
-    | expression '(' call_params? ')'
     | 'continue' | 'break' | 'return' expression?
     | expression_with_block ;
 
@@ -68,8 +74,8 @@ fragment OCT_DIGIT : [0-7] ;
 fragment BIN_DIGIT : [0-1] ;
 fragment FLOAT_BIT_DEPTHS : '32' | '64' ;
 fragment INTEGER_BIT_DEPTHS : '8' | '16' | FLOAT_BIT_DEPTHS | '128' ;
-UINT_TYPES : 'u' INTEGER_BIT_DEPTHS ;
-SINT_TYPES : 'i' INTEGER_BIT_DEPTHS ;
+UINT_TYPES : 'u' INTEGER_BIT_DEPTHS | 'usize' ;
+SINT_TYPES : 'i' INTEGER_BIT_DEPTHS | 'isize' ;
 FLOAT_TYPES : 'f' FLOAT_BIT_DEPTHS ;
 BOOL_TYPE : 'bool' ;
 
