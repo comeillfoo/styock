@@ -104,7 +104,6 @@ class FERListener(RustyListener):
         self.functions = {}
         self.out = out
 
-
     def exitFunction(self, ctx: RustyParser.FunctionContext):
         function = FRFunction.from_parser_ctx(ctx)
         if function.name in self.functions:
@@ -114,7 +113,6 @@ class FERListener(RustyListener):
         print(function.name, ':', sep='', file=self.out)
         print(file=self.out)
         return super().exitFunction(ctx)
-
 
     def exitUnsignedIntegerType(self, ctx: RustyParser.UnsignedIntegerTypeContext):
         return super().exitUnsignedIntegerType(ctx)

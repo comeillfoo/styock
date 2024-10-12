@@ -28,25 +28,34 @@ call_params : expression (',' expression)* ;
 if_expression : 'if' expression block_expression ('else' (block_expression | if_expression))?;
 
 expression_with_block
-    : block_expression
-    | ('loop' | (('while' | 'for' 'mut'? IDENTIFIER 'in') expression)) block_expression
-    | if_expression ;
+    : block_expression                                         # BlockExpr
+    | 'loop' block_expression                                  # InfiniteLoop
+    | 'while' expression block_expression                      # WhileLoop
+    | 'for' 'mut'? IDENTIFIER 'in' expression block_expression # ForLoop
+    | if_expression                                            # IfExpr
+    ;
 
 /* https://doc.rust-lang.org/reference/expressions.html */
 expression
 /* https://doc.rust-lang.org/reference/expressions/literal-expr.html */
-    : INTEGER_LITERAL | FLOAT_LITERAL | 'true' | 'false'
+    : INTEGER_LITERAL                  # IntegerLiteral
+    | FLOAT_LITERAL                    # FloatLiteral
+    | 'true'                           # TrueLiteral
+    | 'false'                          # FalseLiteral
 /* https://doc.rust-lang.org/reference/expressions/path-expr.html */
-    | IDENTIFIER
+    | IDENTIFIER                       # PathExpr
 /* https://doc.rust-lang.org/reference/expressions/call-expr.html */
-    | expression '(' call_params? ')'
+    | expression '(' call_params? ')'  # CallExpr
 /* https://doc.rust-lang.org/reference/expressions/grouped-expr.html */
-    | '(' expression ')'
+    | '(' expression ')'               # GroupedExpr
 /* https://doc.rust-lang.org/reference/expressions/operator-expr.html */
-    | negation_ops expression
-    | expression binary_ops expression
-    | 'continue' | 'break' | 'return' expression?
-    | expression_with_block ;
+    | negation_ops expression          # UnaryExpr
+    | expression binary_ops expression # BinaryExpr
+    | 'continue'                       # ContinueExpr
+    | 'break'                          # BreakExpr
+    | 'return' expression?             # ReturnExpr
+    | expression_with_block            # ExprWithBlock
+    ;
 
 
 expression_statement
