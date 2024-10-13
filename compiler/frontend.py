@@ -99,32 +99,229 @@ class FRFunction:
 
 
 class FERListener(RustyListener):
-    def __init__(self, out):
+    def __init__(self):
         super().__init__()
-        self.functions = {}
-        self.out = out
+        self.tree = {}
 
-    def exitFunction(self, ctx: RustyParser.FunctionContext):
-        function = FRFunction.from_parser_ctx(ctx)
-        if function.name in self.functions:
-            raise Exception # function is already defined
+# Implement negation_ops alternatives
+    def exitArithmeticNegation(self, ctx: RustyParser.ArithmeticNegationContext):
+        self.tree[ctx] = 'neg'
+        return super().exitArithmeticNegation(ctx)
 
-        self.functions[function.name] = function
-        print(function.name, ':', sep='', file=self.out)
-        print(file=self.out)
-        return super().exitFunction(ctx)
+    def exitLogicNegation(self, ctx: RustyParser.LogicNegationContext):
+        self.tree[ctx] = 'not'
+        return super().exitLogicNegation(ctx)
 
-    def exitUnsignedIntegerType(self, ctx: RustyParser.UnsignedIntegerTypeContext):
-        return super().exitUnsignedIntegerType(ctx)
+# Implement arithmetic_or_logical_ops alternatives
+    def exitMulBinop(self, ctx: RustyParser.MulBinopContext):
+        self.tree[ctx] = 'mul'
+        return super().exitMulBinop(ctx)
 
-    def exitSignedIntegerType(self, ctx: RustyParser.SignedIntegerTypeContext):
-        return super().exitSignedIntegerType(ctx)
+    def exitDivBinop(self, ctx: RustyParser.DivBinopContext):
+        self.tree[ctx] = 'div'
+        return super().exitDivBinop(ctx)
 
-    def exitFloatType(self, ctx: RustyParser.FloatTypeContext):
-        return super().exitFloatType(ctx)
+    def exitModBinop(self, ctx: RustyParser.ModBinopContext):
+        self.tree[ctx] = 'mod'
+        return super().exitModBinop(ctx)
 
-    def exitBooleanType(self, ctx: RustyParser.BooleanTypeContext):
-        return super().exitBooleanType(ctx)
+    def exitAddBinop(self, ctx: RustyParser.AddBinopContext):
+        self.tree[ctx] = 'add'
+        return super().exitAddBinop(ctx)
 
-    def exitTupleType(self, ctx: RustyParser.TupleTypeContext):
-        return super().exitTupleType(ctx)
+    def exitSubBinop(self, ctx: RustyParser.SubBinopContext):
+        self.tree[ctx] = 'sub'
+        return super().exitSubBinop(ctx)
+
+    def exitShlBinop(self, ctx: RustyParser.ShlBinopContext):
+        self.tree[ctx] = 'shl'
+        return super().exitShlBinop(ctx)
+
+    def exitShrBinop(self, ctx: RustyParser.ShrBinopContext):
+        self.tree[ctx] = 'shr'
+        return super().exitShrBinop(ctx)
+
+    def exitBitwiseAndBinop(self, ctx: RustyParser.BitwiseAndBinopContext):
+        self.tree[ctx] = 'and'
+        return super().exitBitwiseAndBinop(ctx)
+
+    def exitBitwiseXorBinop(self, ctx: RustyParser.BitwiseXorBinopContext):
+        self.tree[ctx] = 'xor'
+        return super().exitBitwiseXorBinop(ctx)
+
+    def exitBitwiseOrBinop(self, ctx: RustyParser.BitwiseOrBinopContext):
+        self.tree[ctx] = 'or'
+        return super().exitBitwiseOrBinop(ctx)
+
+# Implement comparison_ops alternatives
+    def exitEqBinop(self, ctx: RustyParser.EqBinopContext):
+        self.tree[ctx] = '\n'.join([
+            'cmp',
+            'push 0',
+            'cmp'
+        ])
+        return super().exitEqBinop(ctx)
+
+    def exitNEBinop(self, ctx: RustyParser.NEBinopContext):
+        self.tree[ctx] = '\n'.join([
+            'cmp',
+            'push 0',
+            'cmp',
+            'not'
+        ])
+        return super().exitNEBinop(ctx)
+
+    def exitGTBinop(self, ctx: RustyParser.GTBinopContext):
+        raise NotImplementedError
+        return super().exitGTBinop(ctx)
+
+    def exitLTBinop(self, ctx: RustyParser.LTBinopContext):
+        raise NotImplementedError
+        return super().exitLTBinop(ctx)
+
+    def exitGEBinop(self, ctx: RustyParser.GEBinopContext):
+        raise NotImplementedError
+        return super().exitGEBinop(ctx)
+
+    def exitLEBinop(self, ctx: RustyParser.LEBinopContext):
+        raise NotImplementedError
+        return super().exitLEBinop(ctx)
+
+# Implement lazy_boolean_ops alternatives
+    def exitBooleanAndBinop(self, ctx: RustyParser.BooleanAndBinopContext):
+        self.tree[ctx] = 'and'
+        return super().exitBooleanAndBinop(ctx)
+
+    def exitBooleanOrBinop(self, ctx: RustyParser.BooleanOrBinopContext):
+        self.tree[ctx] = 'or'
+        return super().exitBooleanOrBinop(ctx)
+
+# Implement binary_ops alternatives
+    def exitALBinops(self, ctx: RustyParser.ALBinopsContext):
+        self.tree[ctx] = self.tree[ctx.arithmetic_or_logical_ops()]
+        return super().exitALBinops(ctx)
+
+    def exitCMPBinops(self, ctx: RustyParser.CMPBinopsContext):
+        self.tree[ctx] = self.tree[ctx.comparison_ops()]
+        return super().exitCMPBinops(ctx)
+
+    def exitLazyBooleanBinops(self, ctx: RustyParser.LazyBooleanBinopsContext):
+        self.tree[ctx] = self.tree[ctx.lazy_boolean_ops()]
+        return super().exitLazyBooleanBinops(ctx)
+
+# Implement expression alternatives
+    def exitTrueLiteral(self, ctx: RustyParser.TrueLiteralContext):
+        self.tree[ctx] = '1'
+        return super().exitTrueLiteral(ctx)
+
+    def exitFalseLiteral(self, ctx: RustyParser.FalseLiteralContext):
+        self.tree[ctx] = '0'
+        return super().exitFalseLiteral(ctx)
+
+    def exitIntegerLiteral(self, ctx: RustyParser.IntegerLiteralContext):
+        self.tree[ctx] = str(ctx.INTEGER_LITERAL())
+        return super().exitIntegerLiteral(ctx)
+
+    def exitFloatLiteral(self, ctx: RustyParser.FloatLiteralContext):
+        self.tree[ctx] = str(ctx.FLOAT_LITERAL())
+        return super().exitFloatLiteral(ctx)
+
+    def exitPathExpr(self, ctx: RustyParser.PathExprContext):
+        self.tree[ctx] = str(ctx.IDENTIFIER())
+        return super().exitPathExpr(ctx)
+
+    def exitGroupedExpr(self, ctx: RustyParser.GroupedExprContext):
+        self.tree[ctx] = self.tree[ctx.expression()]
+        return super().exitGroupedExpr(ctx)
+
+    def exitUnaryExpr(self, ctx: RustyParser.UnaryExprContext):
+        self.tree[ctx] = '\n'.join(map(self.tree.get,
+                                       [ctx.expression(), ctx.negation_ops()]))
+        return super().exitUnaryExpr(ctx)
+
+    def exitBinaryExpr(self, ctx: RustyParser.BinaryExprContext):
+        self.tree[ctx] = '\n'.join(map(self.tree.get,
+                                       ctx.expression() + [ctx.binary_ops()]))
+        return super().exitBinaryExpr(ctx)
+
+    def exitReturnExpr(self, ctx: RustyParser.ReturnExprContext):
+        instructions = []
+        if ctx.expression() is not None:
+            instructions.append(self.tree[ctx.expression()])
+        instructions.append('ret')
+        self.tree[ctx] = '\n'.join(instructions)
+        return super().exitReturnExpr(ctx)
+
+    def exitExprWithBlock(self, ctx: RustyParser.ExprWithBlockContext):
+        self.tree[ctx] = self.tree[ctx.getChild()]
+        return super().exitExprWithBlock(ctx)
+
+# Implement expression_with_block alternatives
+    def exitBlockExpr(self, ctx: RustyParser.BlockExprContext):
+        self.tree[ctx] = self.tree[ctx.block_expression()]
+        return super().exitBlockExpr(ctx)
+
+    def exitInfiniteLoop(self, ctx: RustyParser.InfiniteLoopContext):
+        loop_enter_label = 'inf_loop_enter_label'
+        loop_exit_label = 'inf_loop_exit_label'
+        self.tree[ctx] = '\n'.join([
+            loop_enter_label + ':',
+            self.tree[ctx.block_expression()],
+            'jmp' + loop_enter_label,
+            loop_exit_label + ':'
+        ])
+        return super().exitInfiniteLoop(ctx)
+
+    def exitWhileLoop(self, ctx: RustyParser.WhileLoopContext):
+        loop_enter_label = 'while_loop_enter_label'
+        loop_exit_label = 'while_loop_exit_label'
+        self.tree[ctx] = '\n'.join([
+            loop_enter_label + ':',
+            self.tree[ctx.expression()],
+            'jnz' + loop_exit_label,
+            self.tree[ctx.block_expression()],
+            'jmp' + loop_enter_label,
+            loop_exit_label + ':'
+        ])
+        return super().exitWhileLoop(ctx)
+
+    def exitForLoop(self, ctx: RustyParser.ForLoopContext):
+        raise NotImplementedError
+        return super().exitForLoop(ctx)
+
+    def exitIfExpr(self, ctx: RustyParser.IfExprContext):
+        self.tree[ctx] = self.tree[ctx.if_expression()]
+        return super().exitIfExpr(ctx)
+
+# Implement block_expression
+    def exitBlock_expression(self, ctx: RustyParser.Block_expressionContext):
+        # TODO: fix errors
+        statements = ctx.statements()
+        statements = [] if statements is None else statements.statement()
+        self.tree[ctx] = '\n'.join(map(self.tree.get, statements))
+        return super().exitBlock_expression(ctx)
+
+# Implement if_expression rule
+    def exitElseBlockExpr(self, ctx: RustyParser.ElseBlockExprContext):
+        self.tree[ctx] = self.tree[ctx.block_expression()]
+        return super().exitElseBlockExpr(ctx)
+
+    def exitElifExpr(self, ctx: RustyParser.ElifExprContext):
+        self.tree[ctx] = self.tree[ctx.if_expression()]
+        return super().exitElifExpr(ctx)
+
+    def exitIf_expression(self, ctx: RustyParser.If_expressionContext):
+        fi_label = 'fi_label'
+        else_branch_label = fi_label if ctx.else_branch() is None else 'else_branch_label'
+
+        instructions = [
+            self.tree[ctx.expression()],
+            'jnz' + else_branch_label,
+            self.tree[ctx.block_expression()]
+        ]
+        if ctx.else_branch() is not None:
+            instructions.append('jmp' + fi_label)
+            instructions.append(self.tree[ctx.else_branch()])
+
+        self.tree[ctx] = '\n'.join(instructions)
+        return super().exitIf_expression(ctx)

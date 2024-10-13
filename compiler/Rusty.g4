@@ -14,18 +14,46 @@ type
     | tuple_type  # TupleType
     ;
 
-negation_ops : ( '-' | '!' ) ;
+negation_ops
+    : '-' # ArithmeticNegation
+    | '!' # LogicNegation
+    ;
 arithmetic_or_logical_ops
-    : ( '*' | '/' | '%' | '+' | '-' | '<<' | '>>' | '&' | '^' | '|' ) ;
-comparison_ops : ( '==' | '!=' | '>' | '<' | '>=' | '<=' ) ;
-lazy_boolean_ops : ( '&&' | '||' ) ;
+    : '*'  # MulBinop
+    | '/'  # DivBinop
+    | '%'  # ModBinop
+    | '+'  # AddBinop
+    | '-'  # SubBinop
+    | '<<' # ShlBinop
+    | '>>' # ShrBinop
+    | '&'  # BitwiseAndBinop
+    | '^'  # BitwiseXorBinop
+    | '|'  # BitwiseOrBinop
+    ;
+comparison_ops
+    : '==' # EqBinop
+    | '!=' # NEBinop
+    | '>'  # GTBinop
+    | '<'  # LTBinop
+    | '>=' # GEBinop
+    | '<=' # LEBinop
+    ;
+lazy_boolean_ops
+    : '&&' # BooleanAndBinop
+    | '||' # BooleanOrBinop
+    ;
 binary_ops
-    : arithmetic_or_logical_ops
-    | comparison_ops
-    | lazy_boolean_ops ;
+    : arithmetic_or_logical_ops # ALBinops
+    | comparison_ops            # CMPBinops
+    | lazy_boolean_ops          # LazyBooleanBinops
+    ;
 call_params : expression (',' expression)* ;
 
-if_expression : 'if' expression block_expression ('else' (block_expression | if_expression))?;
+else_branch
+    : block_expression # ElseBlockExpr
+    | if_expression    # ElifExpr
+    ;
+if_expression : 'if' expression block_expression ('else' else_branch)?;
 
 expression_with_block
     : block_expression                                         # BlockExpr

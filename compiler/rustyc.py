@@ -23,9 +23,10 @@ def main() -> int:
     parser = RustyParser(token_stream)
 
     tree = parser.crate()
-    listener = FERListener(sys.stdout)
+    listener = FERListener()
     walker = antlr4.ParseTreeWalker()
     walker.walk(listener, tree)
+    print(listener.tree)
     return 0
 
 

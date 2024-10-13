@@ -220,6 +220,7 @@ class Jump(Instruction):
     def nargs(cls) -> int:
         return 1
 # TODO: conditional branches
+# TODO: jne, jnz, je, jz
 
 
 class Call(Instruction):
