@@ -59,7 +59,7 @@ expression_with_block
     : block_expression                                         # BlockExpr
     | 'loop' block_expression                                  # InfiniteLoop
     | 'while' expression block_expression                      # WhileLoop
-    | 'for' 'mut'? IDENTIFIER 'in' expression block_expression # ForLoop
+    | 'for' KW_MUTABILITY? IDENTIFIER 'in' expression block_expression # ForLoop
     | if_expression                                            # IfExpr
     ;
 
@@ -73,7 +73,7 @@ expression
 /* https://doc.rust-lang.org/reference/expressions/path-expr.html */
     | IDENTIFIER                       # PathExpr
 /* https://doc.rust-lang.org/reference/expressions/call-expr.html */
-    | expression '(' call_params? ')'  # CallExpr
+    | IDENTIFIER '(' call_params? ')'  # CallExpr
 /* https://doc.rust-lang.org/reference/expressions/grouped-expr.html */
     | '(' expression ')'               # GroupedExpr
 /* https://doc.rust-lang.org/reference/expressions/operator-expr.html */
@@ -85,20 +85,23 @@ expression
     | expression_with_block            # ExprWithBlock
     ;
 
-
 expression_statement
     : expression ';'
     | expression_with_block ';'? ;
-let_statement : 'let' 'mut'? IDENTIFIER (':' type)? ('=' expression)? ';' ;
+let_statement : 'let' KW_MUTABILITY? IDENTIFIER (':' type)? ('=' expression)? ';' ;
 
-statement : ';' | let_statement | expression_statement ;
+statement
+    : ';'                  # StNopStatement
+    | let_statement        # StLetStatement
+    | expression_statement # StExprStatement
+    ;
 statements : statement+ | statement* expression ;
 block_expression : '{' statements? '}';
 
 function_return_type : '->' type ;
 function_param : IDENTIFIER ':' type ;
 function_parameters : function_param (',' function_param)* ;
-function : 'fn' IDENTIFIER '(' function_parameters? ')' function_return_type? (block_expression | ';');
+function : 'fn' IDENTIFIER '(' function_parameters? ')' function_return_type? block_expression ;
 
 /*
  * Lexer rules
@@ -132,3 +135,5 @@ FLOAT_LITERAL : DEC_LITERAL '.' | DEC_LITERAL '.' DEC_LITERAL
 fragment IDENTIFIER_START : [A-Z] | [a-z] | '_' ;
 fragment IDENTIFIER_CONTINUE : IDENTIFIER_START | [0-9] ;
 IDENTIFIER : IDENTIFIER_START IDENTIFIER_CONTINUE*;
+
+KW_MUTABILITY : 'mut' ;

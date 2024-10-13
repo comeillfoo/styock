@@ -22,11 +22,11 @@ def main() -> int:
     token_stream = antlr4.CommonTokenStream(lexer)
     parser = RustyParser(token_stream)
 
-    tree = parser.crate()
+    root_crate = parser.crate()
     listener = FERListener()
     walker = antlr4.ParseTreeWalker()
-    walker.walk(listener, tree)
-    print(listener.tree)
+    walker.walk(listener, root_crate)
+    print(listener.tree[root_crate])
     return 0
 
 
