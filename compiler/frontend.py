@@ -10,8 +10,7 @@ class FERListener(RustyListener):
     def __init__(self):
         super().__init__()
         self.tree = {}
-        # self.variables = {}
-        # self.scopes = []
+        self.states = []
 
 # Implement negation_ops alternatives
     def exitArithmeticNegation(self, ctx: RustyParser.ArithmeticNegationContext):
@@ -124,11 +123,21 @@ class FERListener(RustyListener):
         return super().exitCall_params(ctx)
 
 # Implement if_expression rule
+    def enterElseBlockExpr(self, ctx: RustyParser.ElseBlockExprContext):
+        self.states.append(False)
+        return super().enterElseBlockExpr(ctx)
+
     def exitElseBlockExpr(self, ctx: RustyParser.ElseBlockExprContext):
+        self.states.pop()
         self.tree[ctx] = self.tree[ctx.block_expression()]
         return super().exitElseBlockExpr(ctx)
 
+    def enterElifExpr(self, ctx: RustyParser.ElifExprContext):
+        self.states.append(False)
+        return super().enterElifExpr(ctx)
+
     def exitElifExpr(self, ctx: RustyParser.ElifExprContext):
+        self.states.pop()
         self.tree[ctx] = self.tree[ctx.if_expression()]
         return super().exitElifExpr(ctx)
 
@@ -150,11 +159,21 @@ class FERListener(RustyListener):
         return super().exitIf_expression(ctx)
 
 # Implement expression_with_block alternatives
+    def enterBlockExpr(self, ctx: RustyParser.BlockExprContext):
+        self.states.append(False)
+        return super().enterBlockExpr(ctx)
+
     def exitBlockExpr(self, ctx: RustyParser.BlockExprContext):
+        self.states.pop()
         self.tree[ctx] = self.tree[ctx.block_expression()]
         return super().exitBlockExpr(ctx)
 
+    def enterInfiniteLoop(self, ctx: RustyParser.InfiniteLoopContext):
+        self.states.append(False)
+        return super().enterInfiniteLoop(ctx)
+
     def exitInfiniteLoop(self, ctx: RustyParser.InfiniteLoopContext):
+        self.states.pop()
         loop_enter_label = 'inf_loop_enter_label'
         loop_exit_label = 'inf_loop_exit_label'
         self.tree[ctx] = '\n'.join([
@@ -165,7 +184,12 @@ class FERListener(RustyListener):
         ])
         return super().exitInfiniteLoop(ctx)
 
+    def enterWhileLoop(self, ctx: RustyParser.WhileLoopContext):
+        self.states.append(False)
+        return super().enterWhileLoop(ctx)
+
     def exitWhileLoop(self, ctx: RustyParser.WhileLoopContext):
+        self.states.pop()
         loop_enter_label = 'while_loop_enter_label'
         loop_exit_label = 'while_loop_exit_label'
         self.tree[ctx] = '\n'.join([
@@ -178,11 +202,21 @@ class FERListener(RustyListener):
         ])
         return super().exitWhileLoop(ctx)
 
+    def enterForLoop(self, ctx: RustyParser.ForLoopContext):
+        self.states.append(False)
+        return super().enterForLoop(ctx)
+
     def exitForLoop(self, ctx: RustyParser.ForLoopContext):
+        self.states.pop()
         raise NotImplementedError
         return super().exitForLoop(ctx)
 
+    def enterIfExpr(self, ctx: RustyParser.IfExprContext):
+        self.states.append(False)
+        return super().enterIfExpr(ctx)
+
     def exitIfExpr(self, ctx: RustyParser.IfExprContext):
+        self.states.pop()
         self.tree[ctx] = self.tree[ctx.if_expression()]
         return super().exitIfExpr(ctx)
 
@@ -277,12 +311,13 @@ class FERListener(RustyListener):
             instructions.extend(map(self.tree.get, ctx.statement()))
         if ctx.expression() is not None:
             instructions.append(self.tree[ctx.expression()])
+            if self.states[-1]:
+                instructions.append(finstr('ret'))
         self.tree[ctx] = '\n'.join(instructions)
         return super().exitStatements(ctx)
 
 # Implement block_expression
     def exitBlock_expression(self, ctx: RustyParser.Block_expressionContext):
-        # self.scopes.pop()
         statements = ctx.statements()
         self.tree[ctx] = '' if statements is None else self.tree[statements]
         return super().exitBlock_expression(ctx)
@@ -292,7 +327,12 @@ class FERListener(RustyListener):
         return super().enterBlock_expression(ctx)
 
 # Implement function rule
+    def enterFunction(self, ctx: RustyParser.FunctionContext):
+        self.states.append(True)
+        return super().enterFunction(ctx)
+
     def exitFunction(self, ctx: RustyParser.FunctionContext):
+        self.states.pop()
         self.tree[ctx] = '\n'.join([
             str(ctx.IDENTIFIER()) + ':',
             self.tree[ctx.block_expression()]
