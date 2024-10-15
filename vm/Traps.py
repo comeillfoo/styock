@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
-
-
-class StackUnderflowTrap(Exception):
+class Trap(Exception):
     pass
 
 
-class InvalidAddressTrap(Exception):
+class StackUnderflowTrap(Trap):
     pass
 
 
-class IllegalInstructionTrap(Exception):
+class InvalidAddressTrap(Trap):
+    pass
+
+
+class IllegalInstructionTrap(Trap):
+    pass
+
+class ZeroDivisionTrap(Trap):
     pass

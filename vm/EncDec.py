@@ -3,8 +3,8 @@ import struct
 from typing import TypeVar
 import numpy as np
 
-import vm.ISA as ISA
-import vm.Traps as Traps
+import ISA as ISA
+import Traps as Traps
 
 
 OPCODE_MASK = (1 << 8) - 1

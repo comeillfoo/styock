@@ -59,46 +59,37 @@ class FERListener(RustyListener):
         self.tree[ctx] = finstr('and')
         return super().exitBitwiseAndBinop(ctx)
 
-    def exitBitwiseXorBinop(self, ctx: RustyParser.BitwiseXorBinopContext):
-        self.tree[ctx] = finstr('xor')
-        return super().exitBitwiseXorBinop(ctx)
-
     def exitBitwiseOrBinop(self, ctx: RustyParser.BitwiseOrBinopContext):
         self.tree[ctx] = finstr('or')
         return super().exitBitwiseOrBinop(ctx)
 
+    def exitBitwiseXorBinop(self, ctx: RustyParser.BitwiseXorBinopContext):
+        self.tree[ctx] = finstr('xor')
+        return super().exitBitwiseXorBinop(ctx)
+
 # Implement comparison_ops alternatives
     def exitEqBinop(self, ctx: RustyParser.EqBinopContext):
-        self.tree[ctx] = '\n'.join(map(finstr, [
-            'cmp',
-            'push 0',
-            'cmp'
-        ]))
+        self.tree[ctx] = finstr('eq')
         return super().exitEqBinop(ctx)
 
     def exitNEBinop(self, ctx: RustyParser.NEBinopContext):
-        self.tree[ctx] = '\n'.join(map(finstr, [
-            'cmp',
-            'push 0',
-            'cmp',
-            'not'
-        ]))
+        self.tree[ctx] = finstr('neq')
         return super().exitNEBinop(ctx)
 
     def exitGTBinop(self, ctx: RustyParser.GTBinopContext):
-        raise NotImplementedError
+        self.tree[ctx] = finstr('gt')
         return super().exitGTBinop(ctx)
 
     def exitLTBinop(self, ctx: RustyParser.LTBinopContext):
-        raise NotImplementedError
+        self.tree[ctx] = finstr('lt')
         return super().exitLTBinop(ctx)
 
     def exitGEBinop(self, ctx: RustyParser.GEBinopContext):
-        raise NotImplementedError
+        self.tree[ctx] = finstr('ge')
         return super().exitGEBinop(ctx)
 
     def exitLEBinop(self, ctx: RustyParser.LEBinopContext):
-        raise NotImplementedError
+        self.tree[ctx] = finstr('le')
         return super().exitLEBinop(ctx)
 
 # Implement lazy_boolean_ops alternatives
@@ -144,7 +135,7 @@ class FERListener(RustyListener):
 
         instructions = [
             self.tree[ctx.expression()],
-            finstr('jnz ' + else_branch_label),
+            finstr('jift ' + else_branch_label),
             self.tree[ctx.block_expression()]
         ]
         if ctx.else_branch() is not None:
@@ -177,7 +168,7 @@ class FERListener(RustyListener):
         self.tree[ctx] = '\n'.join([
             loop_enter_label + ':',
             self.tree[ctx.expression()],
-            finstr('jnz ' + loop_exit_label),
+            finstr('jift ' + loop_exit_label),
             self.tree[ctx.block_expression()],
             finstr('jmp ' + loop_enter_label),
             loop_exit_label + ':'

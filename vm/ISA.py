@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from enum import IntEnum, auto
 import numpy as np
 
-import vm.Traps as Traps
+import Traps as Traps
 
 
 class Opcode(IntEnum):
@@ -12,14 +12,33 @@ class Opcode(IntEnum):
     POP = auto()
     SWAP = auto()
     DUP = auto()
-    STOP = auto()
     ADD = auto()
-    # TODO: SUB, MUL, DIV, MOD, NEG, AND, OR, NOT and etc...
-    CMP = auto()
-    JMP = auto()
-    # TODO: JZ, JNZ, JGT and etc...
+    SUB = auto()
+    MUL = auto()
+    DIV = auto()
+    MOD = auto()
+    SHL = auto()
+    SHR = auto()
+    MAX = auto()
+    MIN = auto()
+    AND = auto()
+    OR = auto()
+    XOR = auto()
+    INC = auto()
+    DEC = auto()
+    NEG = auto()
+    NOT = auto()
+    LT = auto()
+    LE = auto()
+    EQ = auto()
+    NEQ = auto()
+    GE = auto()
+    GT = auto()
     CALL = auto()
     RET = auto()
+    JMP = auto()
+    JIFT = auto()
+    STOP = auto()
     _MAXOP = auto()
 
 
@@ -31,8 +50,9 @@ class Context:
 
 
 class Instruction(ABC):
+    @classmethod
     @abstractmethod
-    def opcode(self) -> Opcode:
+    def opcode(cls) -> Opcode:
         raise NotImplementedError
 
     @abstractmethod
@@ -50,7 +70,8 @@ class Instruction(ABC):
 
 
 class NoOperation(Instruction):
-    def opcode(self) -> Opcode:
+    @classmethod
+    def opcode(cls) -> Opcode:
         return Opcode.NOP
 
     def args(self) -> list[np.uint64]:
@@ -68,7 +89,8 @@ class Push(Instruction):
     def __init__(self, arg: int):
         self.arg = np.uint64(arg)
 
-    def opcode(self) -> Opcode:
+    @classmethod
+    def opcode(cls) -> Opcode:
         return Opcode.PUSH
 
     def args(self) -> list[np.uint64]:
@@ -84,7 +106,8 @@ class Push(Instruction):
 
 
 class Pop(Instruction):
-    def opcode(self) -> Opcode:
+    @classmethod
+    def opcode(cls) -> Opcode:
         return Opcode.POP
 
     def args(self) -> list[np.uint64]:
@@ -103,7 +126,8 @@ class Pop(Instruction):
 
 
 class Swap(Instruction):
-    def opcode(self) -> Opcode:
+    @classmethod
+    def opcode(cls) -> Opcode:
         return Opcode.SWAP
 
     def args(self) -> list[np.uint64]:
@@ -125,7 +149,8 @@ class Swap(Instruction):
 
 
 class Duplicate(Instruction):
-    def opcode(self) -> Opcode:
+    @classmethod
+    def opcode(cls) -> Opcode:
         return Opcode.DUP
 
     def args(self) -> list[np.uint64]:
@@ -144,90 +169,237 @@ class Duplicate(Instruction):
         return 0
 
 
-class Stop(Instruction):
-    def opcode(self) -> Opcode:
-        return Opcode.STOP
+class BinaryApplyInstruction(Instruction):
+    @abstractmethod
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        raise NotImplementedError
+
+    def execute(self, ctx: Context) -> bool:
+        try:
+            a = ctx.args_stack.pop()
+            b = ctx.args_stack.pop()
+            ctx.args_stack.append(self._apply(a, b))
+        except IndexError:
+            raise Traps.StackUnderflowTrap
+        return False
 
     def args(self) -> list[np.uint64]:
         return []
-
-    def execute(self, ctx: Context) -> bool:
-        return True
 
     @classmethod
     def nargs(cls) -> int:
         return 0
 
-
-class Add(Instruction):
-    def opcode(self) -> Opcode:
+class Add(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
         return Opcode.ADD
 
-    def args(self) -> list[np.uint64]:
-        return []
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return a + b
+
+class Substract(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.SUB
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return a - b
+
+class Multiply(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.MUL
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return a * b
+
+class Divide(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.DIV
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        if b == 0:
+            raise Traps.ZeroDivisionTrap
+        return a / b
+
+class Modulo(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.MOD
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        if b == 0:
+            raise Traps.ZeroDivisionTrap
+        return a % b
+
+class ShiftLeft(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.SHL
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return a << b
+
+class ShiftRight(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.SHR
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return a >> b
+
+
+class Maximum(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.MAX
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return a if a > b else b
+
+class Minimum(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.MIN
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return a if a < b else b
+
+class And(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.AND
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return a & b
+
+class Or(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.OR
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return a | b
+
+class Xor(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.XOR
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return a ^ b
+
+
+class UnaryApplyInstruction(Instruction):
+    @abstractmethod
+    def _apply(self, a: np.uint64) -> np.uint64:
+        raise NotImplementedError
 
     def execute(self, ctx: Context) -> bool:
         try:
             a = ctx.args_stack.pop()
-            b = ctx.args_stack.pop()
-            ctx.args_stack.append(a + b)
+            ctx.args_stack.append(a)
         except IndexError:
             raise Traps.StackUnderflowTrap
         return False
-
-    @classmethod
-    def nargs(cls) -> int:
-        return 0
-# TODO: Sub, Mul, Div, Mod, Neg, And, Or, Not and etc...
-
-
-class Compare(Instruction):
-    def opcode(self) -> Opcode:
-        return Opcode.CMP
 
     def args(self) -> list[np.uint64]:
         return []
 
-    def execute(self, ctx: Context) -> bool:
-        try:
-            a = ctx.args_stack.pop()
-            b = ctx.args_stack.pop()
-            ctx.args_stack.append(a - b)
-        except IndexError:
-            raise Traps.StackUnderflowTrap
-        return False
-
     @classmethod
     def nargs(cls) -> int:
         return 0
 
-
-class Jump(Instruction):
-    def __init__(self, arg: int):
-        self.arg = np.uint64(arg)
-
-    def opcode(self) -> Opcode:
-        return Opcode.JMP
-
-    def args(self) -> list[np.uint64]:
-        return [self.arg]
-
-    def execute(self, ctx: Context) -> bool:
-        ctx.ip += self.arg
-        return False
-
+class Increment(UnaryApplyInstruction):
     @classmethod
-    def nargs(cls) -> int:
-        return 1
-# TODO: conditional branches
-# TODO: jne, jnz, je, jz
+    def opcode(cls) -> Opcode:
+        return Opcode.INC
+
+    def _apply(self, a: np.uint64) -> np.uint64:
+        return a + 1
+
+class Decrement(UnaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.DEC
+
+    def _apply(self, a: np.uint64) -> np.uint64:
+        return a - 1
+
+class Negate(UnaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.NEG
+
+    def _apply(self, a: np.uint64) -> np.uint64:
+        return -a
+
+class Not(UnaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.NOT
+
+    def _apply(self, a: np.uint64) -> np.uint64:
+        return ~a
+
+
+class LessThan(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.LT
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return 1 if a < b else 0
+
+class LessOrEqual(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.LE
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return 1 if a <= b else 0
+
+class Equal(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.EQ
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return 1 if a == b else 0
+
+class NotEqual(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.NEQ
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return 1 if a != b else 0
+
+class GreaterThan(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.GT
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return 1 if a > b else 0
+
+class GreaterOrEqual(BinaryApplyInstruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.GE
+
+    def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        return 1 if a >= b else 0
 
 
 class Call(Instruction):
     def __init__(self, arg: int):
         self.arg = np.uint64(arg)
 
-    def opcode(self) -> Opcode:
+    @classmethod
+    def opcode(cls) -> Opcode:
         return Opcode.CALL
 
     def args(self) -> list[np.uint64]:
@@ -243,8 +415,9 @@ class Call(Instruction):
         return 1
 
 
-class Ret(Instruction):
-    def opcode(self) -> Opcode:
+class Return(Instruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
         return Opcode.RET
 
     def args(self) -> list[np.uint64]:
@@ -262,16 +435,99 @@ class Ret(Instruction):
         return 0
 
 
+class Jump(Instruction):
+    def __init__(self, arg: int):
+        self.arg = np.uint64(arg)
+
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.JMP
+
+    def args(self) -> list[np.uint64]:
+        return [self.arg]
+
+    def execute(self, ctx: Context) -> bool:
+        ctx.ip += self.arg
+        return False
+
+    @classmethod
+    def nargs(cls) -> int:
+        return 1
+
+class JumpIfTrue(Instruction):
+    def __init__(self, arg: int):
+        self.arg = np.uint64(arg)
+
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.JIFT
+
+    def args(self) -> list[np.uint64]:
+        return [self.arg]
+
+    def execute(self, ctx: Context) -> bool:
+        try:
+            cond = ctx.args_stack.pop()
+            if cond != 0:
+                ctx.ip += self.arg
+        except IndexError:
+            raise Traps.StackUnderflowTrap
+        return False
+
+    @classmethod
+    def nargs(cls) -> int:
+        return 1
+
+
+class Stop(Instruction):
+    @classmethod
+    def opcode(cls) -> Opcode:
+        return Opcode.STOP
+
+    def args(self) -> list[np.uint64]:
+        return []
+
+    def execute(self, ctx: Context) -> bool:
+        return True
+
+    @classmethod
+    def nargs(cls) -> int:
+        return 0
+
+
 INSTRUCTIONS_MAP = {
-    Opcode.NOP: NoOperation,
-    Opcode.PUSH: Push,
-    Opcode.POP: Pop,
-    Opcode.SWAP: Swap,
-    Opcode.DUP: Duplicate,
-    Opcode.STOP: Stop,
-    Opcode.ADD: Add,
-    Opcode.CMP: Compare,
-    Opcode.JMP: Jump,
-    Opcode.CALL: Call,
-    Opcode.RET: Ret
+    instruction.opcode(): instruction for instruction in [
+        NoOperation,
+        Push,
+        Pop,
+        Swap,
+        Duplicate,
+        Add,
+        Substract,
+        Multiply,
+        Divide,
+        Modulo,
+        ShiftLeft,
+        ShiftRight,
+        Maximum,
+        Minimum,
+        And,
+        Or,
+        Xor,
+        Increment,
+        Decrement,
+        Negate,
+        Not,
+        LessThan,
+        LessOrEqual,
+        Equal,
+        NotEqual,
+        GreaterThan,
+        GreaterOrEqual,
+        Call,
+        Return,
+        Jump,
+        JumpIfTrue,
+        Stop,
+    ]
 }

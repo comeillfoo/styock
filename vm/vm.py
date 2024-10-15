@@ -3,9 +3,9 @@ import sys
 import argparse
 import pathlib
 
-import vm.ISA as ISA
-import vm.Traps as Traps
-from vm.Interpreter import Interpreter
+import ISA as ISA
+import Traps as Traps
+from Interpreter import Interpreter
 
 
 def args_parser() -> argparse.ArgumentParser:
@@ -25,7 +25,7 @@ def main() -> int:
         ISA.Stop(),
         ISA.Push(40),
         ISA.Add(),
-        ISA.Ret()
+        ISA.Return()
     ]
     vm = Interpreter()
     vm.load_program(program)
