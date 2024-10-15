@@ -292,10 +292,6 @@ class FERListener(RustyListener):
         self.tree[ctx] = '' if statements is None else self.tree[statements]
         return super().exitBlock_expression(ctx)
 
-    def enterBlock_expression(self, ctx: RustyParser.Block_expressionContext):
-        # self.scopes.append('block_expression')
-        return super().enterBlock_expression(ctx)
-
 # Implement function rule
     def enterFunction(self, ctx: RustyParser.FunctionContext):
         function_name = str(ctx.IDENTIFIER())
