@@ -14,29 +14,55 @@ fn fact(n: usize) -> usize {
 }
 
 fn main() -> () {
-
+    fact(42)
 }
 ```
 
 Rusty Assembly:
 ```assembly
 fact:
-        push n
+        load 0
         push 0
         eq
         jift 1_fi_label
         push 1
         ret
 1_fi_label:
-        push n
+        load 0
         push 1
         sub
         call fact
-        push n
+        load 0
         mul
         ret
 main:
+        push 42
+        call fact
+        ret
+```
 
+### Sum
+
+Program on Rusty (subset of Rust):
+```rust
+fn main() -> () {
+    let a = 11;
+    let b = 4;
+    let c = a + b;
+}
+```
+
+Rusty Assembly:
+```assembly
+main:
+        push 11
+        store 0
+        push 4
+        store 1
+        load 0
+        load 1
+        add
+        store 2
         ret
 ```
 

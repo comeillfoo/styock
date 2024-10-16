@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
+from dataclasses import dataclass
+
 from libs.RustyListener import RustyListener
 from libs.RustyParser import RustyParser
+
+
+@dataclass
+class FnMeta:
+    name: str
+    parameters: dict[str, int]
+    locals: dict[str, int]
 
 
 def finstr(ins: str) -> str:
@@ -12,6 +21,7 @@ class FERListener(RustyListener):
         self.tree = {}
         self.functions = {}
         self.counter = 0
+        self.current_function = None
 
     def next_label(self, prefix: str) -> str:
         self.counter += 1
@@ -183,9 +193,24 @@ class FERListener(RustyListener):
         self.tree[ctx] = self.tree[ctx.if_expression()]
         return super().exitIfExpr(ctx)
 
+    def _add_variable_id(self, variable_name: str) -> int:
+        current_function = self.functions[self.current_function]
+        if variable_name in current_function.parameters:
+            raise Exception # variable already defined as parameter
+        if variable_name in current_function.locals:
+            raise Exception # variable already defined as local variable
+        last_id = len(current_function.parameters) + len(current_function.locals)
+        self.functions[self.current_function].locals[variable_name] = last_id
+        return last_id
+
     def exitLet_statement(self, ctx: RustyParser.Let_statementContext):
-        expr = ctx.expression()
-        self.tree[ctx] = '' if expr is None else expr
+        variable_name = str(ctx.IDENTIFIER())
+        variable_id = self._add_variable_id(variable_name)
+        instructions = []
+        if ctx.expression() is not None:
+            instructions.append(self.tree[ctx.expression()])
+        instructions.append(finstr(f'store {variable_id}'))
+        self.tree[ctx] = '\n'.join(instructions)
         return super().exitLet_statement(ctx)
 
 # Implement expression alternatives
@@ -205,8 +230,22 @@ class FERListener(RustyListener):
         self.tree[ctx] = finstr('push ' + str(ctx.FLOAT_LITERAL()))
         return super().exitFloatLiteral(ctx)
 
+    def _get_variable_id(self, variable_name: str) -> int:
+        parameters = self.functions[self.current_function].parameters
+        try:
+            return parameters[variable_name]
+        except KeyError:
+            pass
+        locals = self.functions[self.current_function].locals
+        try:
+            return locals[variable_name]
+        except KeyError:
+            last_id = len(parameters) + len(locals)
+            self.functions[self.current_function].locals[variable_name] = last_id
+
     def exitPathExpr(self, ctx: RustyParser.PathExprContext):
-        self.tree[ctx] = finstr('push ' + str(ctx.IDENTIFIER()))
+        variable_id = self._get_variable_id(str(ctx.IDENTIFIER()))
+        self.tree[ctx] = finstr(f'load {variable_id}')
         return super().exitPathExpr(ctx)
 
     def exitGroupedExpr(self, ctx: RustyParser.GroupedExprContext):
@@ -284,14 +323,27 @@ class FERListener(RustyListener):
         return super().exitBlock_expression(ctx)
 
 # Implement function rule
+    def _list_params(self, ctx: RustyParser.FunctionContext) -> dict[str, int]:
+        if ctx.function_parameters() is None:
+            return {}
+        parameters = {}
+        for i, param_ctx in enumerate(ctx.function_parameters().function_param()):
+            param_name = str(param_ctx.IDENTIFIER())
+            if param_name in parameters:
+                raise Exception # parameter already used
+            parameters[param_name] = i
+        return parameters
+
     def enterFunction(self, ctx: RustyParser.FunctionContext):
-        function_name = str(ctx.IDENTIFIER())
-        if function_name in self.functions:
+        self.current_function = str(ctx.IDENTIFIER())
+        if self.current_function in self.functions:
             raise Exception # function already defined
-        self.functions[function_name] = None # TODO: insert function metadata
+        self.functions[self.current_function] = FnMeta(self.current_function,
+                                                       self._list_params(ctx), {})
         return super().enterFunction(ctx)
 
     def exitFunction(self, ctx: RustyParser.FunctionContext):
+        self.current_function = None
         self.tree[ctx] = '\n'.join([
             str(ctx.IDENTIFIER()) + ':',
             self.tree[ctx.block_expression()],

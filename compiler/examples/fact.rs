@@ -6,5 +6,5 @@ fn fact(n: usize) -> usize {
 }
 
 fn main() -> () {
-
+    fact(42)
 }
