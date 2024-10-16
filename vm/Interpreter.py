@@ -42,7 +42,7 @@ class Interpreter:
         return StackView(stack)
 
     def info_args(self) -> StackView:
-        return self._info_stack(self.ctx.args_stack)
+        return self._info_stack(self.ctx.operands_stack)
 
     def info_rets(self) -> StackView:
         return self._info_stack(self.ctx.reta_stack)
