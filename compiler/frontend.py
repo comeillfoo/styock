@@ -6,10 +6,15 @@ from libs.RustyParser import RustyParser
 
 
 @dataclass
+class VariableMeta:
+    identifier: int = 0
+    mutable: bool = False
+
+@dataclass
 class FnMeta:
     name: str
-    parameters: dict[str, int]
-    locals: dict[str, int]
+    parameters: dict[str, VariableMeta]
+    locals: dict[str, VariableMeta]
 
 
 def finstr(ins: str) -> str:
@@ -193,23 +198,29 @@ class FERListener(RustyListener):
         self.tree[ctx] = self.tree[ctx.if_expression()]
         return super().exitIfExpr(ctx)
 
-    def _add_variable_id(self, variable_name: str) -> int:
+    def _add_local_variable(self, variable_name: str,
+                         is_mutable: bool = False) -> VariableMeta:
         current_function = self.functions[self.current_function]
         if variable_name in current_function.parameters:
             raise Exception # variable already defined as parameter
         if variable_name in current_function.locals:
             raise Exception # variable already defined as local variable
         last_id = len(current_function.parameters) + len(current_function.locals)
-        self.functions[self.current_function].locals[variable_name] = last_id
-        return last_id
+        self.functions[self.current_function] \
+            .locals[variable_name] = VariableMeta(last_id, is_mutable)
+        return self.functions[self.current_function].locals[variable_name]
 
     def exitLet_statement(self, ctx: RustyParser.Let_statementContext):
         variable_name = str(ctx.IDENTIFIER())
-        variable_id = self._add_variable_id(variable_name)
+        variable = self._add_local_variable(variable_name,
+                                               ctx.KW_MUTABILITY() is not None)
         instructions = []
         if ctx.expression() is not None:
             instructions.append(self.tree[ctx.expression()])
-        instructions.append(finstr(f'store {variable_id}'))
+        else:
+            # init with the default value
+            instructions.append(finstr('push 0'))
+        instructions.append(finstr(f'store {variable.identifier}'))
         self.tree[ctx] = '\n'.join(instructions)
         return super().exitLet_statement(ctx)
 
@@ -230,22 +241,20 @@ class FERListener(RustyListener):
         self.tree[ctx] = finstr('push ' + str(ctx.FLOAT_LITERAL()))
         return super().exitFloatLiteral(ctx)
 
-    def _get_variable_id(self, variable_name: str) -> int:
+    def _get_variable(self, variable_name: str) -> VariableMeta:
         parameters = self.functions[self.current_function].parameters
         try:
             return parameters[variable_name]
         except KeyError:
             pass
-        locals = self.functions[self.current_function].locals
         try:
-            return locals[variable_name]
+            return self.functions[self.current_function].locals[variable_name]
         except KeyError:
-            last_id = len(parameters) + len(locals)
-            self.functions[self.current_function].locals[variable_name] = last_id
+            raise Exception # variable is not defined
 
     def exitPathExpr(self, ctx: RustyParser.PathExprContext):
-        variable_id = self._get_variable_id(str(ctx.IDENTIFIER()))
-        self.tree[ctx] = finstr(f'load {variable_id}')
+        variable = self._get_variable(str(ctx.IDENTIFIER()))
+        self.tree[ctx] = finstr(f'load {variable.identifier}')
         return super().exitPathExpr(ctx)
 
     def exitGroupedExpr(self, ctx: RustyParser.GroupedExprContext):
@@ -282,6 +291,13 @@ class FERListener(RustyListener):
     def exitExprWithBlock(self, ctx: RustyParser.ExprWithBlockContext):
         self.tree[ctx] = self.tree[ctx.getChild()]
         return super().exitExprWithBlock(ctx)
+
+    def exitAssignmentsExpr(self, ctx: RustyParser.AssignmentsExprContext):
+        variable = self._get_variable(ctx.IDENTIFIER())
+        if not variable.mutable:
+            raise Exception # variable is immutable
+        # TODO: assign the corresponding form
+        return super().exitAssignmentsExpr(ctx)
 
 # Implement expression_statement
     def exitExpression_statement(self, ctx: RustyParser.Expression_statementContext):
@@ -323,15 +339,18 @@ class FERListener(RustyListener):
         return super().exitBlock_expression(ctx)
 
 # Implement function rule
-    def _list_params(self, ctx: RustyParser.FunctionContext) -> dict[str, int]:
+    def _list_parameters(self,
+                         ctx: RustyParser.FunctionContext) -> dict[str, int]:
         if ctx.function_parameters() is None:
             return {}
+
         parameters = {}
         for i, param_ctx in enumerate(ctx.function_parameters().function_param()):
             param_name = str(param_ctx.IDENTIFIER())
             if param_name in parameters:
                 raise Exception # parameter already used
-            parameters[param_name] = i
+            parameters[param_name] = VariableMeta(i,
+                param_ctx.KW_MUTABILITY() is not None)
         return parameters
 
     def enterFunction(self, ctx: RustyParser.FunctionContext):
@@ -339,7 +358,7 @@ class FERListener(RustyListener):
         if self.current_function in self.functions:
             raise Exception # function already defined
         self.functions[self.current_function] = FnMeta(self.current_function,
-                                                       self._list_params(ctx), {})
+            self._list_parameters(ctx), {})
         return super().enterFunction(ctx)
 
     def exitFunction(self, ctx: RustyParser.FunctionContext):

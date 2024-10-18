@@ -47,6 +47,19 @@ binary_ops
     | comparison_ops            # CMPBinops
     | lazy_boolean_ops          # LazyBooleanBinops
     ;
+assignment_ops
+    : '='
+    | '+='
+    | '-='
+    | '*='
+    | '/='
+    | '%='
+    | '&='
+    | '|='
+    | '^='
+    | '<<='
+    | '>>='
+    ;
 call_params : expression (',' expression)* ;
 
 else_branch
@@ -66,23 +79,24 @@ expression_with_block
 /* https://doc.rust-lang.org/reference/expressions.html */
 expression
 /* https://doc.rust-lang.org/reference/expressions/literal-expr.html */
-    : INTEGER_LITERAL                  # IntegerLiteral
-    | FLOAT_LITERAL                    # FloatLiteral
-    | 'true'                           # TrueLiteral
-    | 'false'                          # FalseLiteral
+    : INTEGER_LITERAL                      # IntegerLiteral
+    | FLOAT_LITERAL                        # FloatLiteral
+    | 'true'                               # TrueLiteral
+    | 'false'                              # FalseLiteral
 /* https://doc.rust-lang.org/reference/expressions/path-expr.html */
-    | IDENTIFIER                       # PathExpr
+    | IDENTIFIER                           # PathExpr
 /* https://doc.rust-lang.org/reference/expressions/call-expr.html */
-    | IDENTIFIER '(' call_params? ')'  # CallExpr
+    | IDENTIFIER '(' call_params? ')'      # CallExpr
 /* https://doc.rust-lang.org/reference/expressions/grouped-expr.html */
-    | '(' expression ')'               # GroupedExpr
+    | '(' expression ')'                   # GroupedExpr
 /* https://doc.rust-lang.org/reference/expressions/operator-expr.html */
-    | negation_ops expression          # UnaryExpr
-    | expression binary_ops expression # BinaryExpr
-    | 'continue'                       # ContinueExpr
-    | 'break'                          # BreakExpr
-    | 'return' expression?             # ReturnExpr
-    | expression_with_block            # ExprWithBlock
+    | negation_ops expression              # UnaryExpr
+    | expression binary_ops expression     # BinaryExpr
+    | IDENTIFIER assignment_ops expression # AssignmentsExpr
+    | 'continue'                           # ContinueExpr
+    | 'break'                              # BreakExpr
+    | 'return' expression?                 # ReturnExpr
+    | expression_with_block                # ExprWithBlock
     ;
 
 expression_statement
@@ -99,7 +113,7 @@ statements : statement+ | statement* expression ;
 block_expression : '{' statements? '}';
 
 function_return_type : '->' type ;
-function_param : IDENTIFIER ':' type ;
+function_param : KW_MUTABILITY? IDENTIFIER ':' type ;
 function_parameters : function_param (',' function_param)* ;
 function : 'fn' IDENTIFIER '(' function_parameters? ')' function_return_type? block_expression ;
 
