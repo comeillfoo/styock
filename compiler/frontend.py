@@ -21,6 +21,9 @@ class FnMeta:
 def finstr(ins: str) -> str:
     return '\t' + ins
 
+def flabel(lbl: str) -> str:
+    return lbl + ':'
+
 
 class FERListener(RustyListener):
     def __init__(self):
@@ -30,9 +33,11 @@ class FERListener(RustyListener):
         self.counter = 0
         self.current_function: Optional[str] = None
 
-    def next_label(self, prefix: str) -> str:
+    def next_label(self, name: str) -> str:
+        salt = f'.{self.counter}_'
+        pepper = '_utlbl'
         self.counter += 1
-        return f'{self.counter}_{prefix}'
+        return salt + name + pepper
 
 # Implement NegationExprs alternatives
     def exitNegationExpr(self, ctx: RustyParser.NegationExprContext):
@@ -151,20 +156,21 @@ class FERListener(RustyListener):
         return super().exitElseBranch(ctx)
 
     def exitIfExpression(self, ctx: RustyParser.IfExpressionContext):
-        fi_label = self.next_label('fi_label')
-        else_branch_label = fi_label
-        if ctx.elseBranch() is not None:
-            else_branch_label = self.next_label('else_branch_label')
+        lbl_fi = self.next_label('fi')
+        lbl_then = self.next_label('then')
 
         instructions = [
             self.tree[ctx.expression()],
-            finstr('jift ' + else_branch_label),
-            self.tree[ctx.blockExpression()]
+            finstr('jift ' + lbl_then)
         ]
         if ctx.elseBranch() is not None:
-            instructions.append(finstr('jmp ' + fi_label))
             instructions.append(self.tree[ctx.elseBranch()])
-        instructions.append(fi_label + ':')
+        instructions.extend([
+            finstr('jmp ' + lbl_fi),
+            flabel(lbl_then),
+            self.tree[ctx.blockExpression()],
+            flabel(lbl_fi)
+        ])
 
         self.tree[ctx] = '\n'.join(instructions)
         return super().exitIfExpression(ctx)
@@ -191,26 +197,30 @@ class FERListener(RustyListener):
         return super().exitBlockExpr(ctx)
 
     def exitInfiniteLoopExpr(self, ctx: RustyParser.InfiniteLoopExprContext):
-        loop_enter_label = self.next_label('inflo_enter_label')
-        loop_exit_label = self.next_label('inflo_exit_label')
+        lbl_loop_enter = self.next_label('info_enter')
+        lbl_loop_exit = self.next_label('inflo_exit')
         self.tree[ctx] = '\n'.join([
-            loop_enter_label + ':',
+            flabel(lbl_loop_enter),
             self.tree[ctx.blockExpression()],
-            finstr('jmp ' + loop_enter_label),
-            loop_exit_label + ':'
+            finstr('jmp ' + lbl_loop_enter),
+            flabel(lbl_loop_exit)
         ])
         return super().exitInfiniteLoopExpr(ctx)
 
     def exitPredicateLoopExpr(self, ctx: RustyParser.PredicateLoopExprContext):
-        loop_enter_label = self.next_label('predlo_enter_label')
-        loop_exit_label = self.next_label('predlo_exit_label')
+        lbl_loop_enter = self.next_label('predlo_enter')
+        lbl_loop_cond = self.next_label('predlo_cond')
+        lbl_loop_exit = self.next_label('predlo_exit')
+        # exit label is needed in case of implementing break and continue
+
         self.tree[ctx] = '\n'.join([
-            loop_enter_label + ':',
-            self.tree[ctx.expression()],
-            finstr('jift ' + loop_exit_label),
+            finstr('jmp ' + lbl_loop_cond),
+            flabel(lbl_loop_enter),
             self.tree[ctx.blockExpression()],
-            finstr('jmp ' + loop_enter_label),
-            loop_exit_label + ':'
+            flabel(lbl_loop_cond),
+            self.tree[ctx.expression()],
+            finstr('jift ' + lbl_loop_enter),
+            flabel(lbl_loop_exit)
         ])
         return super().exitPredicateLoopExpr(ctx)
 

@@ -10,6 +10,7 @@ from libs.RustyLexer import RustyLexer
 from libs.RustyParser import RustyParser
 
 from frontend import FERListener, finstr
+from backend import process
 
 
 def args_parser() -> argparse.ArgumentParser:
@@ -45,11 +46,10 @@ def main() -> int:
     walker = antlr4.ParseTreeWalker()
     walker.walk(listener, root_crate)
 
-    executable = listener.tree[root_crate]
+    source_code = listener.tree[root_crate]
     if not args.only_frontend:
-        # TODO: resolve labels and replace jmps and calls
-        executable = executable
-    print(executable, file=out)
+        source_code = process(source_code)
+    print(source_code, file=out)
     out.close()
     return 0
 
