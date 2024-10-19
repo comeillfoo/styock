@@ -6,11 +6,11 @@ import argparse
 import pathlib
 import antlr4
 
-from libs.RustyLexer import RustyLexer
-from libs.RustyParser import RustyParser
+from .libs.RustyLexer import RustyLexer
+from .libs.RustyParser import RustyParser
 
-from frontend import FERListener, finstr
-from backend import process
+from .frontend import FERListener
+from .backend import process
 
 
 def args_parser() -> argparse.ArgumentParser:

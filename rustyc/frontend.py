@@ -2,8 +2,8 @@
 from typing import Optional
 from dataclasses import dataclass
 
-from libs.RustyListener import RustyListener
-from libs.RustyParser import RustyParser
+from .libs.RustyListener import RustyListener
+from .libs.RustyParser import RustyParser
 
 
 @dataclass
