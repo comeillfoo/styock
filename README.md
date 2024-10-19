@@ -1,6 +1,6 @@
 # styock
 
-## Frontend examples
+## Examples
 
 ### Factorial
 
@@ -18,7 +18,7 @@ fn main() -> () {
 }
 ```
 
-Rusty Assembly:
+Rusty Assembly (only fronend stage - `-f` option):
 ```assembly
         call main
         stop
@@ -46,6 +46,30 @@ main:
         ret
 ```
 
+Rusty assembly (after backend stage):
+```assembly
+0:      call 17
+1:      stop
+2:      store 0
+3:      load 0
+4:      push 0
+5:      eq
+6:      jift 2
+7:      jmp 3
+8:      push 1
+9:      ret
+10:     load 0
+11:     push 1
+12:     sub
+13:     call -11
+14:     load 0
+15:     mul
+16:     ret
+17:     push 42
+18:     call -16
+19:     ret
+```
+
 ### Sum
 
 Program on Rusty (subset of Rust):
@@ -57,7 +81,7 @@ fn main() -> () {
 }
 ```
 
-Rusty Assembly:
+Rusty Assembly (only fronend stage - `-f` option):
 ```assembly
         call main
         stop
@@ -71,6 +95,21 @@ main:
         add
         store 2
         ret
+```
+
+Rusty assembly (after backend stage):
+```assembly
+0:      call 2
+1:      stop
+2:      push 11
+3:      store 0
+4:      push 4
+5:      store 1
+6:      load 0
+7:      load 1
+8:      add
+9:      store 2
+10:     ret
 ```
 
 ### Euclidean algorithm
@@ -95,7 +134,7 @@ fn main() {
 }
 ```
 
-Rusty Assembly:
+Rusty Assembly (only fronend stage - `-f` option):
 ```assembly
         call main
         stop
@@ -141,6 +180,47 @@ main:
         call gcd
         store 2
         ret
+```
+
+Rusty assembly (after backend stage):
+```assembly
+0:      call 28
+1:      stop
+2:      store 1
+3:      store 0
+4:      jmp 14
+5:      load 0
+6:      load 1
+7:      gt
+8:      jift 6
+9:      load 1
+10:     load 0
+11:     mod
+12:     store 1
+13:     jmp 5
+14:     load 1
+15:     load 0
+16:     mod
+17:     store 0
+18:     load 0
+19:     load 1
+20:     mul
+21:     push 0
+22:     gt
+23:     jift -18
+24:     load 0
+25:     load 1
+26:     add
+27:     ret
+28:     push 6
+29:     store 0
+30:     push 4
+31:     store 1
+32:     load 0
+33:     load 1
+34:     call -32
+35:     store 2
+36:     ret
 ```
 
 ## Sources
