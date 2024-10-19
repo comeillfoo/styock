@@ -21,6 +21,8 @@ def args_parser() -> argparse.ArgumentParser:
                    help='Path to output file, default stdout')
     p.add_argument('--only-frontend', '-f', action='store_true',
                    help='Exclude backend-stage, only frontend')
+    p.add_argument('--ip', '-i', action='store_true',
+                   help='Prepend instruction pointer value for current instruction at backend')
 
     # Arguments:
     p.add_argument('file', type=pathlib.Path, help='Path to source file')
@@ -48,7 +50,7 @@ def main() -> int:
 
     source_code = listener.tree[root_crate]
     if not args.only_frontend:
-        source_code = process(source_code)
+        source_code = process(source_code, should_prepend=args.ip)
     print(source_code, file=out)
     out.close()
     return 0
