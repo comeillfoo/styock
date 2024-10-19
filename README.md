@@ -20,6 +20,8 @@ fn main() -> () {
 
 Rusty Assembly:
 ```assembly
+        call main
+        stop
 fact:
         store 0
         load 0
@@ -55,6 +57,8 @@ fn main() -> () {
 
 Rusty Assembly:
 ```assembly
+        call main
+        stop
 main:
         push 11
         store 0
@@ -63,31 +67,6 @@ main:
         load 0
         load 1
         add
-        store 2
-        ret
-```
-
-### Sub
-
-Program on Rusty (subset of Rust):
-```rust
-fn main() -> () {
-    let b = 4;
-    let a = 11;
-    let c = a - b;
-}
-```
-
-Rusty Assembly:
-```assembly
-main:
-        push 4
-        store 0
-        push 11
-        store 1
-        load 1
-        load 0
-        sub
         store 2
         ret
 ```
@@ -116,6 +95,8 @@ fn main() {
 
 Rusty Assembly:
 ```assembly
+        call main
+        stop
 gcd:
         store 1
         store 0

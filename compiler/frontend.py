@@ -397,6 +397,17 @@ class FERListener(RustyListener):
         return super().exitItem(ctx)
 
     def exitCrate(self, ctx: RustyParser.CrateContext):
-        self.tree[ctx] = '' if ctx.item() is None else '\n'.join(map(self.tree.get,
-                                                                     ctx.item()))
+        self.tree[ctx] = ''
+        if ctx.item() is None:
+            return super().exitCrate(ctx)
+
+        if 'main' not in self.functions:
+            raise Exception # no start function defined
+
+        program = [
+            finstr('call main'),
+            finstr('stop')
+        ]
+        program.extend(map(self.tree.get, ctx.item()))
+        self.tree[ctx] = '\n'.join(program)
         return super().exitCrate(ctx)
