@@ -21,6 +21,7 @@ fn main() -> () {
 Rusty Assembly:
 ```assembly
 fact:
+        store 0
         load 0
         push 0
         eq
@@ -62,6 +63,97 @@ main:
         load 0
         load 1
         add
+        store 2
+        ret
+```
+
+### Sub
+
+Program on Rusty (subset of Rust):
+```rust
+fn main() -> () {
+    let b = 4;
+    let a = 11;
+    let c = a - b;
+}
+```
+
+Rusty Assembly:
+```assembly
+main:
+        push 4
+        store 0
+        push 11
+        store 1
+        load 1
+        load 0
+        sub
+        store 2
+        ret
+```
+
+### Euclidean algorithm
+
+Program on Rusty (subset of Rust):
+```rust
+fn gcd(mut a: u32, mut b: u32) -> u32 {
+    while a * b > 0 {
+        if a > b {
+            a %= b;
+        } else {
+            b = b % a;
+        }
+    }
+    a + b
+}
+
+fn main() {
+    let a = 6;
+    let b = 4;
+    let ans = gcd(a, b);
+}
+```
+
+Rusty Assembly:
+```assembly
+gcd:
+        store 1
+        store 0
+3_predlo_enter_label:
+        load 0
+        load 1
+        mul
+        push 0
+        gt
+        jift 4_predlo_exit_label
+        load 0
+        load 1
+        gt
+        jift 2_else_branch_label
+        load 1
+        load 0
+        mod
+        store 0
+        jmp 1_fi_label
+        load 1
+        load 0
+        mod
+        store 1
+1_fi_label:
+        jmp 3_predlo_enter_label
+4_predlo_exit_label:
+        load 0
+        load 1
+        add
+        ret
+main:
+        push 6
+        store 0
+        push 4
+        store 1
+        load 0
+        load 1
+        call gcd
         store 2
         ret
 ```

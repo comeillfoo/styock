@@ -5,108 +5,117 @@ grammar Rusty;
 crate : item* ; /* aka starting rule */
 item : function ;
 
-tuple_type : '(' ')' | '(' type (',' type)* ')';
-type
-    : UINT_TYPES  # UnsignedIntegerType
-    | SINT_TYPES  # SignedIntegerType
-    | FLOAT_TYPES # FloatType
-    | BOOL_TYPE   # BooleanType
-    | tuple_type  # TupleType
+function : KW_FN IDENTIFIER LPAREN functionParams? RPAREN functionReturnType? blockExpression ;
+functionParams : functionParam (COMMA functionParam)* ;
+functionParam : KW_MUT? IDENTIFIER COLON type ;
+functionReturnType : RARROW type ;
+
+statement
+    : SEMI                # StNopStatement
+    | letStatement        # StLetStatement
+    | expressionStatement # StExprStatement
     ;
 
-negation_ops
-    : '-' # ArithmeticNegation
-    | '!' # LogicNegation
-    ;
-arithmetic_or_logical_ops
-    : '*'  # MulBinop
-    | '/'  # DivBinop
-    | '%'  # ModBinop
-    | '+'  # AddBinop
-    | '-'  # SubBinop
-    | '<<' # ShlBinop
-    | '>>' # ShrBinop
-    | '&'  # BitwiseAndBinop
-    | '^'  # BitwiseXorBinop
-    | '|'  # BitwiseOrBinop
-    ;
-comparison_ops
-    : '==' # EqBinop
-    | '!=' # NEBinop
-    | '>'  # GTBinop
-    | '<'  # LTBinop
-    | '>=' # GEBinop
-    | '<=' # LEBinop
-    ;
-lazy_boolean_ops
-    : '&&' # BooleanAndBinop
-    | '||' # BooleanOrBinop
-    ;
-binary_ops
-    : arithmetic_or_logical_ops # ALBinops
-    | comparison_ops            # CMPBinops
-    | lazy_boolean_ops          # LazyBooleanBinops
-    ;
-call_params : expression (',' expression)* ;
+letStatement : KW_LET KW_MUT? IDENTIFIER (COLON type)? (EQ expression)? SEMI ;
 
-else_branch
-    : block_expression # ElseBlockExpr
-    | if_expression    # ElifExpr
-    ;
-if_expression : 'if' expression block_expression ('else' else_branch)?;
-
-expression_with_block
-    : block_expression                                         # BlockExpr
-    | 'loop' block_expression                                  # InfiniteLoop
-    | 'while' expression block_expression                      # WhileLoop
-    | 'for' KW_MUTABILITY? IDENTIFIER 'in' expression block_expression # ForLoop
-    | if_expression                                            # IfExpr
+expressionStatement
+    : expression SEMI
+    | expressionWithBlock SEMI?
     ;
 
 /* https://doc.rust-lang.org/reference/expressions.html */
 expression
 /* https://doc.rust-lang.org/reference/expressions/literal-expr.html */
-    : INTEGER_LITERAL                      # IntegerLiteral
-    | FLOAT_LITERAL                        # FloatLiteral
-    | 'true'                               # TrueLiteral
-    | 'false'                              # FalseLiteral
+    : INTEGER_LITERAL                                # IntegerLiteral
+    | FLOAT_LITERAL                                  # FloatLiteral
+    | KW_TRUE                                        # TrueLiteral
+    | KW_FALSE                                       # FalseLiteral
 /* https://doc.rust-lang.org/reference/expressions/path-expr.html */
-    | IDENTIFIER                           # PathExpr
+    | IDENTIFIER                                     # PathExpr
 /* https://doc.rust-lang.org/reference/expressions/call-expr.html */
-    | IDENTIFIER '(' call_params? ')'      # CallExpr
-/* https://doc.rust-lang.org/reference/expressions/grouped-expr.html */
-    | '(' expression ')'                   # GroupedExpr
+    | IDENTIFIER LPAREN callParams? RPAREN           # CallExpr
 /* https://doc.rust-lang.org/reference/expressions/operator-expr.html */
-    | negation_ops expression              # UnaryExpr
-    | expression binary_ops expression     # BinaryExpr
-    | IDENTIFIER ASSIGNMENT_OP expression  # AssignmentsExpr
-    | 'continue'                           # ContinueExpr
-    | 'break'                              # BreakExpr
-    | 'return' expression?                 # ReturnExpr
-    | expression_with_block                # ExprWithBlock
+    | (MINUS | NOT) expression                       # NegationExpr
+    | expression (STAR | SLASH | PERCENT) expression # ArithOrLogicExpr
+    | expression (PLUS | MINUS) expression           # ArithOrLogicExpr
+    | expression (SHL | SHR) expression              # ArithOrLogicExpr
+    | expression AND expression                      # ArithOrLogicExpr
+    | expression CARET expression                    # ArithOrLogicExpr
+    | expression OR expression                       # ArithOrLogicExpr
+    | expression comparisonOps expression            # ComparisonExpr
+    | expression ANDAND expression                   # LazyBooleanExpr
+    | expression OROR expression                     # LazyBooleanExpr
+    | IDENTIFIER EQ expression                       # AssignmentExpr
+    | IDENTIFIER compoundAssignOps expression        # CompoundAssignmentExpr
+/* https://doc.rust-lang.org/reference/expressions/grouped-expr.html */
+    | KW_CONTINUE                                    # ContinueExpr
+    | KW_BREAK                                       # BreakExpr
+    | KW_RETURN expression?                          # ReturnExpr
+    | LPAREN expression RPAREN                       # GroupedExpr
+    | expressionWithBlock                            # ExprWithBlock
     ;
 
-expression_statement
-    : expression ';'
-    | expression_with_block ';'? ;
-let_statement : 'let' KW_MUTABILITY? IDENTIFIER (':' type)? ('=' expression)? ';' ;
-
-statement
-    : ';'                  # StNopStatement
-    | let_statement        # StLetStatement
-    | expression_statement # StExprStatement
+comparisonOps
+    : EQEQ
+    | NEQ
+    | GT
+    | LT
+    | GE
+    | LE
     ;
-statements : statement+ | statement* expression ;
-block_expression : '{' statements? '}';
 
-function_return_type : '->' type ;
-function_param : KW_MUTABILITY? IDENTIFIER ':' type ;
-function_parameters : function_param (',' function_param)* ;
-function : 'fn' IDENTIFIER '(' function_parameters? ')' function_return_type? block_expression ;
+compoundAssignOps
+    : PLUSEQ
+    | MINUSEQ
+    | STAREQ
+    | SLASHEQ
+    | PERCENTEQ
+    | ANDEQ
+    | OREQ
+    | CARETEQ
+    | SHLEQ
+    | SHREQ
+    ;
 
+expressionWithBlock
+    : blockExpression                     # BlockExpr
+    | KW_LOOP blockExpression             # infiniteLoopExpr
+    | KW_WHILE expression blockExpression # predicateLoopExpr
+    | ifExpression                        # IfExpr
+    ;
+
+statements : statement+ expression? | expression ;
+blockExpression : LCURLYBR statements? RCURLYBR;
+
+callParams : expression (COMMA expression)* ;
+
+elseBranch : KW_ELSE ( blockExpression | ifExpression ) ;
+ifExpression : KW_IF expression blockExpression elseBranch?;
+
+tupleType : LPAREN RPAREN | LPAREN type (COMMA type)* RPAREN;
+type
+    : UINT_TYPES
+    | SINT_TYPES
+    | FLOAT_TYPES
+    | BOOL_TYPE
+    | tupleType
+    ;
 /*
  * Lexer rules
  */
+KW_BREAK : 'break' ;
+KW_CONTINUE : 'continue' ;
+KW_ELSE : 'else' ;
+KW_FALSE : 'false' ;
+KW_FN : 'fn' ;
+KW_IF : 'if' ;
+KW_LET : 'let' ;
+KW_LOOP : 'loop' ;
+KW_MUT : 'mut' ;
+KW_RETURN : 'return' ;
+KW_TRUE : 'true' ;
+KW_WHILE : 'while' ;
+
 WHITESPACE : (' ' | '\t' | '\n' | '\r') -> skip;
 
 fragment DEC_DIGIT : [0-9] ;
@@ -137,8 +146,44 @@ fragment IDENTIFIER_START : [A-Z] | [a-z] | '_' ;
 fragment IDENTIFIER_CONTINUE : IDENTIFIER_START | [0-9] ;
 IDENTIFIER : IDENTIFIER_START IDENTIFIER_CONTINUE*;
 
-KW_MUTABILITY : 'mut' ;
+PLUS : '+' ;
+MINUS : '-' ;
+STAR : '*' ;
+SLASH : '/' ;
+PERCENT : '%' ;
+CARET : '^' ;
+NOT : '!' ;
+AND : '&' ;
+OR : '|' ;
+ANDAND : '&&' ;
+OROR : '||' ;
+SHL : '<<' ;
+SHR : '>>' ;
 
-ASSIGNMENT_OP
-    : '+=' | '-=' | '*=' | '/=' | '%=' | '&='
-    | '|=' | '^=' | '<<=' | '>>=' | '=' ;
+PLUSEQ : '+=' ;
+MINUSEQ : '-=' ;
+STAREQ : '*=' ;
+SLASHEQ : '/=' ;
+PERCENTEQ : '%=' ;
+CARETEQ : '^=' ;
+ANDEQ : '&=' ;
+OREQ : '|=' ;
+SHLEQ : '<<=' ;
+SHREQ : '>>=' ;
+EQ : '=' ;
+
+EQEQ : '==' ;
+NEQ : '!=' ;
+GT : '>' ;
+LT : '<' ;
+GE : '>=' ;
+LE : '<=' ;
+COMMA : ',' ;
+SEMI : ';' ;
+COLON : ':' ;
+RARROW : '->' ;
+
+LCURLYBR : '{' ;
+RCURLYBR : '}' ;
+LPAREN : '(' ;
+RPAREN : ')' ;

@@ -184,8 +184,8 @@ class BinaryApplyInstruction(Instruction):
 
     def execute(self, ctx: Context) -> bool:
         try:
-            a = ctx.operands_stack.pop()
             b = ctx.operands_stack.pop()
+            a = ctx.operands_stack.pop()
             ctx.operands_stack.append(self._apply(a, b))
         except IndexError:
             raise Traps.StackUnderflowTrap
