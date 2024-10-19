@@ -47,19 +47,6 @@ binary_ops
     | comparison_ops            # CMPBinops
     | lazy_boolean_ops          # LazyBooleanBinops
     ;
-assignment_ops
-    : '='
-    | '+='
-    | '-='
-    | '*='
-    | '/='
-    | '%='
-    | '&='
-    | '|='
-    | '^='
-    | '<<='
-    | '>>='
-    ;
 call_params : expression (',' expression)* ;
 
 else_branch
@@ -92,7 +79,7 @@ expression
 /* https://doc.rust-lang.org/reference/expressions/operator-expr.html */
     | negation_ops expression              # UnaryExpr
     | expression binary_ops expression     # BinaryExpr
-    | IDENTIFIER assignment_ops expression # AssignmentsExpr
+    | IDENTIFIER ASSIGNMENT_OP expression  # AssignmentsExpr
     | 'continue'                           # ContinueExpr
     | 'break'                              # BreakExpr
     | 'return' expression?                 # ReturnExpr
@@ -151,3 +138,7 @@ fragment IDENTIFIER_CONTINUE : IDENTIFIER_START | [0-9] ;
 IDENTIFIER : IDENTIFIER_START IDENTIFIER_CONTINUE*;
 
 KW_MUTABILITY : 'mut' ;
+
+ASSIGNMENT_OP
+    : '+=' | '-=' | '*=' | '/=' | '%=' | '&='
+    | '|=' | '^=' | '<<=' | '>>=' | '=' ;

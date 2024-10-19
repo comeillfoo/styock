@@ -296,7 +296,17 @@ class FERListener(RustyListener):
         variable = self._get_variable(ctx.IDENTIFIER())
         if not variable.mutable:
             raise Exception # variable is immutable
-        # TODO: assign the corresponding form
+
+        instructions = [self.tree[ctx.expression()]]
+        op = str(ctx.ASSIGNMENT_OP())
+        if op != '=':
+            instructions.append(finstr(f'load {variable.identifier}'))
+            instructions.append(finstr({
+                '+': 'add', '-': 'sub', '*': 'mul', '/': 'div', '%': 'mod',
+                '&': 'and', '|': 'or', '^': 'xor', '<<': 'shl', '>>': 'shr'
+            }[op.rstrip('=')]))
+        instructions.append(finstr(f'store {variable.identifier}'))
+        self.tree[ctx] = '\n'.join(instructions)
         return super().exitAssignmentsExpr(ctx)
 
 # Implement expression_statement
