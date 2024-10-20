@@ -14,7 +14,7 @@ fn fact(n: usize) -> usize {
 }
 
 fn main() -> () {
-    fact(42)
+    fact(11)
 }
 ```
 
@@ -41,7 +41,7 @@ fact:
         mul
         ret
 main:
-        push 42
+        push 11
         call fact
         ret
 ```
@@ -221,6 +221,62 @@ Rusty assembly (after backend stage):
 34:     call -32
 35:     store 2
 36:     ret
+```
+
+## Demo
+
+## Factorial
+
+```bash
+python3 -m rusty run -v ./fact.rsyb
+0000000000000000:	Call(0x11)
+0000000000000011:	Push(0xb)
+0000000000000012:	Call(0xfffffffffffffff0)
+0000000000000002:	Store(0x0)
+0000000000000003:	Load(0x0)
+0000000000000004:	Push(0x0)
+0000000000000005:	Equal
+0000000000000006:	JumpIfTrue(0x2)
+0000000000000007:	Jump(0x3)
+000000000000000a:	Load(0x0)
+000000000000000b:	Push(0x1)
+000000000000000c:	Substract
+000000000000000d:	Call(0xfffffffffffffff5)
+0000000000000002:	Store(0x0)
+0000000000000003:	Load(0x0)
+0000000000000004:	Push(0x0)
+0000000000000005:	Equal
+0000000000000006:	JumpIfTrue(0x2)
+0000000000000007:	Jump(0x3)
+000000000000000a:	Load(0x0)
+000000000000000b:	Push(0x1)
+000000000000000c:	Substract
+000000000000000d:	Call(0xfffffffffffffff5)
+0000000000000002:	Store(0x0)
+0000000000000003:	Load(0x0)
+0000000000000004:	Push(0x0)
+0000000000000005:	Equal
+0000000000000006:	JumpIfTrue(0x2)
+0000000000000007:	Jump(0x3)
+000000000000000a:	Load(0x0)
+000000000000000b:	Push(0x1)
+000000000000000c:	Substract
+.................
+0000000000000008:	Push(0x1)
+0000000000000009:	Return
+000000000000000e:	Load(0x0)
+000000000000000f:	Multiply
+0000000000000010:	Return
+.................
+000000000000000e:	Load(0x0)
+000000000000000f:	Multiply
+0000000000000010:	Return
+000000000000000e:	Load(0x0)
+000000000000000f:	Multiply
+0000000000000010:	Return
+0000000000000013:	Return
+0000000000000001:	Stop
+#0	0x2611500
 ```
 
 ## Sources

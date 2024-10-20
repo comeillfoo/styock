@@ -53,14 +53,14 @@ class Frame:
 class Context:
     def __init__(self):
         self.operands_stack = []
-        self.frames = [Frame(0)]
+        self.frames = []
         self.ip = np.uint64(0)
 
 
 def force_uint64(number: int) -> np.uint64:
     if number < 0:
         number += (1 << 64)
-    if number > 1 << 64:
+    if number >= (1 << 64):
         number &= (1 << 64) - 1
     return np.uint64(number)
 
@@ -476,7 +476,7 @@ class Call(Instruction):
 
     def execute(self, ctx: Context) -> bool:
         ctx.frames.append(Frame(ctx.ip))
-        ctx.ip += self.arg
+        ctx.ip = ctx.ip - 1 + self.arg
         return False
 
     @classmethod
@@ -517,7 +517,7 @@ class Jump(Instruction):
         return [self.arg]
 
     def execute(self, ctx: Context) -> bool:
-        ctx.ip += self.arg
+        ctx.ip = ctx.ip - 1 + self.arg
         return False
 
     @classmethod
@@ -539,7 +539,7 @@ class JumpIfTrue(Instruction):
         try:
             cond = ctx.operands_stack.pop()
             if cond != 0:
-                ctx.ip += self.arg
+                ctx.ip = ctx.ip - 1 + self.arg
         except IndexError:
             raise traps.StackUnderflowTrap
         return False

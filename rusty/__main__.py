@@ -6,28 +6,26 @@ import argparse
 import pathlib
 import pprint
 
-from . import isa, traps
+from . import traps
 from .vm import VM
 from .decenc import encode_program, parse_program, decode_program
 
 
 def run(args: argparse.Namespace) -> int:
-    program: list[isa.Instruction] = [
-        isa.Push(10),
-        isa.Push(20),
-        isa.Add(),
-        isa.Call(1),
-        isa.Stop(),
-        isa.Push(40),
-        isa.Add(),
-        isa.Return()
-    ]
-    vm = VM()
+    if not os.path.isfile(args.bytecode):
+        print('File', args.bytecode, 'not found')
+        return errno.ENOENT
+
+    with open(args.bytecode, 'rb') as fp:
+        program = decode_program(fp.read())
+
+    vm = VM(args.verbose)
     vm.load_program(program)
     try:
         vm.run()
-    except IndexError:
-        raise traps.InvalidAddressTrap
+    finally:
+        print(vm.info_operands())
+        print(vm.info_frames())
     return 0
 
 
@@ -48,7 +46,6 @@ def encode(args: argparse.Namespace) -> int:
     return 0
 
 
-
 def decode(args: argparse.Namespace) -> int:
     if not os.path.isfile(args.bytecode):
         print('File', args.bytecode, 'not found')
@@ -65,6 +62,8 @@ def args_parser() -> argparse.ArgumentParser:
     runner_p = subp.add_parser('run', help='runs bytecode')
     runner_p.add_argument('bytecode', type=pathlib.Path, metavar='PATH',
                           help='path to bytecode in binary format')
+    runner_p.add_argument('--verbose', '-v', action='store_true',
+                          help='print ip and instruction on execution')
     runner_p.set_defaults(func=run)
 
     encoder_p = subp.add_parser('encode', help='translates source from text to binary')

@@ -12,5 +12,5 @@ fn gcd(mut a: u32, mut b: u32) -> u32 {
 fn main() {
     let a = 6;
     let b = 4;
-    let ans = gcd(a, b);
+    gcd(a, b)
 }

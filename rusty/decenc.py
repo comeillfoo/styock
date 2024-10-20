@@ -93,9 +93,11 @@ def decode_single(bytes: bytes) -> isa.Instruction:
     raw_ins = struct.unpack('<Q', bytes)[0]
     opcode = isa.Opcode((raw_ins >> 56) & OPCODE_MASK)
     arg = raw_ins & PADDING_MASK
+    if arg & ((PADDING_MASK + 1) >> 1):
+        arg |= ~PADDING_MASK
     try:
         cls = isa.INSTRUCTIONS_MAP.get(opcode)
-        return cls(np.uint64(arg)) if cls.nargs() > 0 else cls()
+        return cls(isa.force_uint64(arg)) if cls.nargs() > 0 else cls()
     except KeyError:
         raise traps.IllegalInstructionTrap
 
