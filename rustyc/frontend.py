@@ -292,8 +292,8 @@ class FERListener(RustyListener):
             raise Exception # variable is immutable
 
         self.tree[ctx] = '\n'.join([
-            self.tree[ctx.expression()],
             finstr(f'load {variable.identifier}'),
+            self.tree[ctx.expression()],
             self.tree[ctx.compoundAssignOps()],
             finstr(f'store {variable.identifier}')
         ])
