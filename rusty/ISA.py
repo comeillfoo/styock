@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from enum import IntEnum, auto
 import numpy as np
 
-import Traps as Traps
+from . import Traps
 
 
 class Opcode(IntEnum):

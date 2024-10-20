@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 
 
-import ISA as ISA
+from . import ISA
 
 
 class StackView:

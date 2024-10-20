@@ -3,8 +3,8 @@ import struct
 from typing import TypeVar
 import numpy as np
 
-import ISA as ISA
-import Traps as Traps
+from . import ISA
+from . import Traps
 
 
 OPCODE_MASK = (1 << 8) - 1
@@ -28,6 +28,10 @@ def encode_single(instruction: ISA.Instruction) -> bytes:
 
 def encode_program(instructions: list[ISA.Instruction]) -> bytes:
     return b''.join(map(encode_single, instructions))
+
+
+def parse_program(lines: list[str]) -> list[ISA.Instruction]:
+    return []
 
 
 def decode_single(bytes: bytes) -> ISA.Instruction:
