@@ -90,7 +90,7 @@ def parse_program(lines: list[str]) -> list[isa.Instruction]:
 
 def decode_single(bytes: bytes) -> isa.Instruction:
     assert len(bytes) == 8
-    raw_ins = struct.unpack('<Q', bytes)
+    raw_ins = struct.unpack('<Q', bytes)[0]
     opcode = isa.Opcode((raw_ins >> 56) & OPCODE_MASK)
     arg = raw_ins & PADDING_MASK
     try:

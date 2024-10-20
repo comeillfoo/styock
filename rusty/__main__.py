@@ -55,7 +55,7 @@ def decode(args: argparse.Namespace) -> int:
         return errno.ENOENT
 
     with open(args.bytecode, mode='rb') as fp:
-        print(decode_program(fp.read()))
+        pprint.pprint(decode_program(fp.read()))
 
 
 def args_parser() -> argparse.ArgumentParser:
