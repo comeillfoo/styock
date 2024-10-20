@@ -4,42 +4,48 @@ import errno
 import sys
 import argparse
 import pathlib
+import pprint
 
-from . import ISA, Traps
-from .Interpreter import Interpreter
-from .EncDec import encode_program, parse_program, decode_program
+from . import isa, traps
+from .interpreter import Interpreter
+from .decenc import encode_program, parse_program, decode_program
 
 
 def run(args: argparse.Namespace) -> int:
-    program: list[ISA.Instruction] = [
-        ISA.Push(10),
-        ISA.Push(20),
-        ISA.Add(),
-        ISA.Call(1),
-        ISA.Stop(),
-        ISA.Push(40),
-        ISA.Add(),
-        ISA.Return()
+    program: list[isa.Instruction] = [
+        isa.Push(10),
+        isa.Push(20),
+        isa.Add(),
+        isa.Call(1),
+        isa.Stop(),
+        isa.Push(40),
+        isa.Add(),
+        isa.Return()
     ]
     vm = Interpreter()
     vm.load_program(program)
     try:
         vm.run()
     except IndexError:
-        raise Traps.InvalidAddressTrap
+        raise traps.InvalidAddressTrap
     return 0
 
 
 def encode(args: argparse.Namespace) -> int:
-    if not os.path.isfile(args.bytecode):
-        print('File', args.bytecode, 'not found')
+    if not os.path.isfile(args.source):
+        print('File', args.source, 'not found')
         return errno.ENOENT
 
     instructions = []
-    with open(args.bytecode, encoding='utf-8') as fp:
+    with open(args.source, encoding='utf-8') as fp:
         instructions.extend(parse_program(fp.readlines()))
-    print(instructions)
-    print(encode_program(instructions))
+    if args.print_parse:
+        pprint.pprint(instructions)
+        return 0
+
+    with open(args.destination, 'wb') as fp:
+        fp.write(encode_program(instructions))
+    return 0
 
 
 
@@ -61,11 +67,13 @@ def args_parser() -> argparse.ArgumentParser:
                           help='path to bytecode in binary format')
     runner_p.set_defaults(func=run)
 
-    encoder_p = subp.add_parser('encode', help='translates bytecode from text to binary')
-    encoder_p.add_argument('bytecode', type=pathlib.Path, metavar='PATH',
-                           help='path to bytecode in text format')
-    encoder_p.add_argument('--output', '-o', type=pathlib.Path, metavar='OUT',
+    encoder_p = subp.add_parser('encode', help='translates source from text to binary')
+    encoder_p.add_argument('source', type=pathlib.Path, metavar='SOURCE',
+                           help='path to source in text format')
+    encoder_p.add_argument('destination', type=pathlib.Path, metavar='DEST',
                            help='where to save resulting binary')
+    encoder_p.add_argument('--print-parse', '-p', action='store_true',
+                           help='skips encoding, only prints parsed instructions')
     encoder_p.set_defaults(func=encode)
 
     decoder_p = subp.add_parser('decode', help='translates bytecode from binary to text')

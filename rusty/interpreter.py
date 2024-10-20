@@ -3,7 +3,7 @@ from typing import Tuple
 import numpy as np
 
 
-from . import ISA
+from . import isa
 
 
 class StackView:
@@ -15,7 +15,7 @@ class StackView:
 
 
 class InstructionView:
-    def __init__(self, instruction: ISA.Instruction):
+    def __init__(self, instruction: isa.Instruction):
         self._instruction = instruction
 
     def __repr__(self) -> str:
@@ -25,17 +25,17 @@ class InstructionView:
 
 class Interpreter:
     def __init__(self):
-        self.ctx = ISA.Context()
+        self.ctx = isa.Context()
         self.program = []
         self.is_halted = True
         self.breakpoints = []
         self.breaklines = set()
 
-    def load_program(self, program: list[ISA.Instruction]):
+    def load_program(self, program: list[isa.Instruction]):
         self.program = program
         self.is_halted = False
 
-    def info_breakpoints(self) -> list[Tuple[int, ISA.Instruction]]:
+    def info_breakpoints(self) -> list[Tuple[int, isa.Instruction]]:
         return [ (line_no, self.program[line_no]) for line_no in self.breakpoints ]
 
     def _info_stack(self, stack: list[np.uint64]) -> StackView:

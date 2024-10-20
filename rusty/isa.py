@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from enum import IntEnum, auto
 import numpy as np
 
-from . import Traps
+from . import traps
 
 
 class Opcode(IntEnum):
@@ -57,6 +57,14 @@ class Context:
         self.ip = np.uint64(0)
 
 
+def force_uint64(number: int) -> np.uint64:
+    if number < 0:
+        number += (1 << 64)
+    if number > 1 << 64:
+        number &= (1 << 64) - 1
+    return np.uint64(number)
+
+
 class Instruction(ABC):
     @classmethod
     @abstractmethod
@@ -75,6 +83,14 @@ class Instruction(ABC):
     @abstractmethod
     def nargs(cls) -> int:
         raise NotImplementedError
+
+    def __repr__(self) -> str:
+        components = [type(self).__name__]
+        if self.nargs() > 0:
+            components.append('(')
+            components.append(', '.join(map(hex, self.args())))
+            components.append(')')
+        return ''.join(components)
 
 
 class NoOperation(Instruction):
@@ -95,7 +111,7 @@ class NoOperation(Instruction):
 
 class Push(Instruction):
     def __init__(self, arg: int):
-        self.arg = np.uint64(arg)
+        self.arg = force_uint64(arg)
 
     @classmethod
     def opcode(cls) -> Opcode:
@@ -125,7 +141,7 @@ class Pop(Instruction):
         try:
             ctx.operands_stack.pop()
         except IndexError:
-            raise Traps.StackUnderflowTrap
+            raise traps.StackUnderflowTrap
         return False
 
     @classmethod
@@ -148,7 +164,7 @@ class Swap(Instruction):
             ctx.operands_stack.append(a)
             ctx.operands_stack.append(b)
         except IndexError:
-            raise Traps.StackUnderflowTrap
+            raise traps.StackUnderflowTrap
         return False
 
     @classmethod
@@ -166,7 +182,7 @@ class Duplicate(Instruction):
 
     def execute(self, ctx: Context) -> bool:
         if len(ctx.operands_stack) == 0:
-            raise Traps.StackUnderflowTrap
+            raise traps.StackUnderflowTrap
 
         arg = ctx.operands_stack[-1]
         ctx.operands_stack.append(arg)
@@ -188,7 +204,7 @@ class BinaryApplyInstruction(Instruction):
             a = ctx.operands_stack.pop()
             ctx.operands_stack.append(self._apply(a, b))
         except IndexError:
-            raise Traps.StackUnderflowTrap
+            raise traps.StackUnderflowTrap
         return False
 
     def args(self) -> list[np.uint64]:
@@ -229,7 +245,7 @@ class Divide(BinaryApplyInstruction):
 
     def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
         if b == 0:
-            raise Traps.ZeroDivisionTrap
+            raise traps.ZeroDivisionTrap
         return a / b
 
 class Modulo(BinaryApplyInstruction):
@@ -239,7 +255,7 @@ class Modulo(BinaryApplyInstruction):
 
     def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
         if b == 0:
-            raise Traps.ZeroDivisionTrap
+            raise traps.ZeroDivisionTrap
         return a % b
 
 class ShiftLeft(BinaryApplyInstruction):
@@ -310,7 +326,7 @@ class UnaryApplyInstruction(Instruction):
             a = ctx.operands_stack.pop()
             ctx.operands_stack.append(a)
         except IndexError:
-            raise Traps.StackUnderflowTrap
+            raise traps.StackUnderflowTrap
         return False
 
     def args(self) -> list[np.uint64]:
@@ -404,7 +420,7 @@ class GreaterOrEqual(BinaryApplyInstruction):
 
 class Load(Instruction):
     def __init__(self, variable_id: int):
-        self.variable_id = np.uint64(variable_id)
+        self.variable_id = force_uint64(variable_id)
 
     @classmethod
     def opcode(cls) -> Opcode:
@@ -425,7 +441,7 @@ class Load(Instruction):
 
 class Store(Instruction):
     def __init__(self, variable_id: int):
-        self.variable_id = np.uint64(variable_id)
+        self.variable_id = force_uint64(variable_id)
 
     @classmethod
     def opcode(cls) -> Opcode:
@@ -439,7 +455,7 @@ class Store(Instruction):
             variable_value = ctx.operands_stack.pop()
             ctx.frames[-1].variables[self.variable_id] = variable_value
         except IndexError:
-            raise Traps.StackUnderflowTrap
+            raise traps.StackUnderflowTrap
         return False
 
     @classmethod
@@ -449,7 +465,7 @@ class Store(Instruction):
 
 class Call(Instruction):
     def __init__(self, arg: int):
-        self.arg = np.uint64(arg)
+        self.arg = force_uint64(arg)
 
     @classmethod
     def opcode(cls) -> Opcode:
@@ -481,7 +497,7 @@ class Return(Instruction):
             frame = ctx.frames.pop()
             ctx.ip = frame.return_address
         except IndexError:
-            raise Traps.StackUnderflowTrap
+            raise traps.StackUnderflowTrap
         return False
 
     @classmethod
@@ -491,7 +507,7 @@ class Return(Instruction):
 
 class Jump(Instruction):
     def __init__(self, arg: int):
-        self.arg = np.uint64(arg)
+        self.arg = force_uint64(arg)
 
     @classmethod
     def opcode(cls) -> Opcode:
@@ -510,7 +526,7 @@ class Jump(Instruction):
 
 class JumpIfTrue(Instruction):
     def __init__(self, arg: int):
-        self.arg = np.uint64(arg)
+        self.arg = force_uint64(arg)
 
     @classmethod
     def opcode(cls) -> Opcode:
@@ -525,7 +541,7 @@ class JumpIfTrue(Instruction):
             if cond != 0:
                 ctx.ip += self.arg
         except IndexError:
-            raise Traps.StackUnderflowTrap
+            raise traps.StackUnderflowTrap
         return False
 
     @classmethod
