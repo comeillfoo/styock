@@ -7,7 +7,7 @@ import pathlib
 import pprint
 
 from . import isa, traps
-from .interpreter import Interpreter
+from .vm import VM
 from .decenc import encode_program, parse_program, decode_program
 
 
@@ -22,7 +22,7 @@ def run(args: argparse.Namespace) -> int:
         isa.Add(),
         isa.Return()
     ]
-    vm = Interpreter()
+    vm = VM()
     vm.load_program(program)
     try:
         vm.run()

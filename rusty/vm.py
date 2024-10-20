@@ -23,7 +23,7 @@ class InstructionView:
         return self._instruction.opcode().name + ('\t' + args if self._instruction.nargs() > 0 else '')
 
 
-class Interpreter:
+class VM:
     def __init__(self):
         self.ctx = isa.Context()
         self.program = []
