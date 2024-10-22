@@ -32,6 +32,7 @@ class FERListener(RustyListener):
         self.functions: dict[str, FnMeta] = {}
         self.counter = 0
         self.current_function: Optional[str] = None
+        self.loop_labels = []
 
     def next_label(self, name: str) -> str:
         salt = f'.{self.counter}_'
@@ -196,9 +197,15 @@ class FERListener(RustyListener):
         self.tree[ctx] = self.tree[ctx.blockExpression()]
         return super().exitBlockExpr(ctx)
 
+    def enterInfiniteLoopExpr(self, ctx: RustyParser.InfiniteLoopExprContext):
+        self.loop_labels.append((
+            self.next_label('info_enter'),
+            self.next_label('inflo_exit')
+        ))
+        return super().enterInfiniteLoopExpr(ctx)
+
     def exitInfiniteLoopExpr(self, ctx: RustyParser.InfiniteLoopExprContext):
-        lbl_loop_enter = self.next_label('info_enter')
-        lbl_loop_exit = self.next_label('inflo_exit')
+        lbl_loop_enter, lbl_loop_exit = self.loop_labels.pop()
         self.tree[ctx] = '\n'.join([
             flabel(lbl_loop_enter),
             self.tree[ctx.blockExpression()],
@@ -207,11 +214,16 @@ class FERListener(RustyListener):
         ])
         return super().exitInfiniteLoopExpr(ctx)
 
+    def enterPredicateLoopExpr(self, ctx: RustyParser.PredicateLoopExprContext):
+        self.loop_labels.append((
+            self.next_label('predlo_cond'),
+            self.next_label('predlo_exit')
+        ))
+        return super().enterPredicateLoopExpr(ctx)
+
     def exitPredicateLoopExpr(self, ctx: RustyParser.PredicateLoopExprContext):
+        lbl_loop_cond, lbl_loop_exit = self.loop_labels.pop()
         lbl_loop_enter = self.next_label('predlo_enter')
-        lbl_loop_cond = self.next_label('predlo_cond')
-        lbl_loop_exit = self.next_label('predlo_exit')
-        # exit label is needed in case of implementing break and continue
 
         self.tree[ctx] = '\n'.join([
             finstr('jmp ' + lbl_loop_cond),
@@ -299,7 +311,16 @@ class FERListener(RustyListener):
         ])
         return super().exitCompoundAssignmentExpr(ctx)
 
-    # TODO: break and continue
+    def exitContinueExpr(self, ctx: RustyParser.ContinueExprContext):
+        continue_label, _ = self.loop_labels[-1]
+        self.tree[ctx] = finstr('jmp ' + continue_label)
+        return super().exitContinueExpr(ctx)
+
+    def exitBreakExpr(self, ctx: RustyParser.BreakExprContext):
+        _, break_label = self.loop_labels[-1]
+        self.tree[ctx] = finstr('jmp ' + break_label)
+        return super().exitBreakExpr(ctx)
+
     def exitReturnExpr(self, ctx: RustyParser.ReturnExprContext):
         instructions = []
         if ctx.expression() is not None:
