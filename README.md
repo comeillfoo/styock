@@ -1,5 +1,9 @@
 # styock
 
+## Architecture
+
+![styok-arch](/styok-arch.jpg)
+
 ## Examples
 
 ### Factorial
