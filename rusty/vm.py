@@ -62,6 +62,9 @@ class VM:
             raise ValueError # TODO: define own exceptions
         return self.program[address]
 
+    def list_range(self, begin: int, end: int) -> list[isa.Instruction]:
+        return [ self.list_(addr) for addr in range(begin, end) ]
+
     def current_instruction(self) -> isa.Instruction:
         return self.list(self.ip())
 
