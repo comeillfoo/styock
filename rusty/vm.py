@@ -65,8 +65,11 @@ class VM:
     def list_range(self, begin: int, end: int) -> list[isa.Instruction]:
         return [ self.list_(addr) for addr in range(begin, end) ]
 
+    def size(self) -> int:
+        return len(self.program)
+
     def current_instruction(self) -> isa.Instruction:
-        return self.list(self.ip())
+        return self.list_(self.ip())
 
     def is_encountered_breakpoint(self) -> bool:
         return self.ctx.ip in self.breaklines
