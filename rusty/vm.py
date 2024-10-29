@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+'''Стековая виртуальная машина и все, что с ней связано.
+'''
 from typing import Tuple
 import numpy as np
 
@@ -8,6 +10,9 @@ from . import traps
 
 
 class OperandView:
+    '''Auxilary class for simplifying representation of operands in interactive
+    mode.
+    '''
     def __init__(self, operand: np.uint64):
         self._operand = operand
 
@@ -16,6 +21,9 @@ class OperandView:
 
 
 class FrameView:
+    '''Auxilary class for simplifying representation of call frame in interactive
+    mode.
+    '''
     def __init__(self, frame: isa.Frame):
         self._frame = frame
 
@@ -25,6 +33,9 @@ class FrameView:
 
 
 class StackView:
+    '''Auxilary class for simplifying representation of any type of stack in
+    interactive mode.
+    '''
     def __init__(self, stack: list):
         self._stack = stack
 
@@ -33,6 +44,13 @@ class StackView:
 
 
 class VM:
+    '''Stack-based virtual machine that is able to:
+
+    1. load programs from the list of instructions
+    2. provide its state
+    3. manage breakpoints
+    4. control the execution of the instructions (execute single, or until stop)
+    '''
     def __init__(self, debug: bool = False):
         self.ctx = isa.Context()
         self.program = []
@@ -42,6 +60,13 @@ class VM:
         self.debug = debug
 
     def load_program(self, program: list[isa.Instruction]):
+        '''Stores list of instructions as the current program of the VM.
+
+        :param self: instance of VM
+        :type self: class:`rusty.vm.VM`
+        :param program: list of VM instructions
+        :type program: list[class:`rusty.isa.Instruction`]
+        '''
         self.program = program
         self.is_halted = False
 
