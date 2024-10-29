@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+'''Реализация инструкций стековой виртуальной машины и обслуживающих ее структур:
+
++ контекст вычислений - стек операндов, стек фреймов и указатель инструкций (IP);
++ фрейм - хранилище локальных для фрейма переменных и их значений, адрес возврата из фрейма
+
+Фрейм используется для организации вызова подпрограмм, включая хранение их
+параметров и локально объявленных переменных.
+'''
 from abc import ABC, abstractmethod
 from enum import IntEnum, auto
 import numpy as np
@@ -7,6 +15,8 @@ from . import traps
 
 
 class Opcode(IntEnum):
+    '''Enumeration of instructions' opcodes
+    '''
     NOP = 0
     PUSH = auto()
     POP = auto()
@@ -45,12 +55,21 @@ class Opcode(IntEnum):
 
 
 class Frame:
+    '''Call frame that stores return address from subprogram (`return_address`)
+    and its parameters, and local variables (`variables`).
+    '''
     def __init__(self, return_address: np.uint64):
         self.return_address = return_address
         self.variables = {}
 
 
 class Context:
+    '''Context that every instruction operates in. It has:
+
+    + stack of operands - `operands_stack`
+    + stack of call frames - `frames`
+    + and instruction pointer - `ip` that inits to zero on start
+    '''
     def __init__(self):
         self.operands_stack = []
         self.frames = []
@@ -58,6 +77,14 @@ class Context:
 
 
 def force_uint64(number: int) -> np.uint64:
+    '''Converts any int to 64-bit unsigned integer. If integer is out of uint64
+    range then cuts off extra bits.
+
+    :param number: integer to convert
+    :type number: int
+
+    :return: TODO
+    '''
     if number < 0:
         number += (1 << 64)
     if number >= (1 << 64):
