@@ -16,11 +16,11 @@ from .decenc import encode_program, parse_program, decode_program
 def run(args: argparse.Namespace) -> int:
     '''Reads instructions from binary file and executes them.
 
-    @param args: command-line arguments
-    @type args: class:`argparse.Namespace`
+    :param args: command-line arguments
+    :type args: class:`argparse.Namespace`
 
-    @return: error code, zero on success
-    @rtype: int
+    :return: error code, zero on success
+    :rtype: int
     '''
     if not os.path.isfile(args.bytecode):
         print('File', args.bytecode, 'not found')
@@ -42,11 +42,11 @@ def run(args: argparse.Namespace) -> int:
 def encode(args: argparse.Namespace) -> int:
     '''Encodes textual list of instructions to binary file.
 
-    @param args: command-line arguments
-    @type args: class:`argparse.Namespace`
+    :param args: command-line arguments
+    :type args: class:`argparse.Namespace`
 
-    @return: error code, zero on success
-    @rtype: int
+    :return: error code, zero on success
+    :rtype: int
     '''
     if not os.path.isfile(args.source):
         print('File', args.source, 'not found')
@@ -67,11 +67,11 @@ def encode(args: argparse.Namespace) -> int:
 def decode(args: argparse.Namespace) -> int:
     '''Decodes binary file with VM instructions to textual list of objects.
 
-    @param args: command-line arguments
-    @type args: class:`argparse.Namespace`
+    :param args: command-line arguments
+    :type args: class:`argparse.Namespace`
 
-    @return: error code, zero on success
-    @rtype: int
+    :return: error code, zero on success
+    :rtype: int
     '''
     if not os.path.isfile(args.bytecode):
         print('File', args.bytecode, 'not found')
@@ -84,8 +84,8 @@ def decode(args: argparse.Namespace) -> int:
 def args_parser() -> argparse.ArgumentParser:
     '''Builds arguments parser with commands: `run`, `encode` and decode.
 
-    @return: arguments parser
-    @rtype: class:`argparse.ArgumentParser`
+    :return: arguments parser
+    :rtype: class:`argparse.ArgumentParser`
     '''
     p = argparse.ArgumentParser('rusty')
     subp = p.add_subparsers(title='subcommands')
@@ -120,8 +120,8 @@ def main() -> int:
     '''Main routine that parses command-line arguments and runs corresponding
     command.
 
-    @return: error code, zero on success
-    @rtype: int
+    :return: error code, zero on success
+    :rtype: int
     '''
     args = args_parser().parse_args()
     return args.func(args)

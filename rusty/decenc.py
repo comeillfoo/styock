@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
+'''Модуль, инкапсулирующий кодирование и декодирование инструкций к ВМ из
+текстового в бинарный формат и наоборот.
+'''
 import struct
 from typing import TypeVar
-import numpy as np
 
 from . import isa
 from . import traps
@@ -51,6 +53,17 @@ INSTRUCTIONS_NAMES = {
 ListElement = TypeVar('ListElement')
 
 def _iordefault(lst: list[ListElement], i: int, default: ListElement) -> ListElement:
+    '''Returns list element at index if exist or default value.
+
+    :param lst: list under search
+    :type lst: list[T]
+    :param i: index of element in list to return
+    :type i: int
+    :param default:
+
+    :return: element at list or default if no such index
+    :rtype: T - the same as the list's elements
+    '''
     try:
         return lst[i]
     except IndexError:
@@ -58,16 +71,40 @@ def _iordefault(lst: list[ListElement], i: int, default: ListElement) -> ListEle
 
 
 def encode_single(instruction: isa.Instruction) -> bytes:
+    '''Encodes single VM instruction object to sequence of bytes.
+
+    :param instruction: single VM instruction
+    :type instruction: class:`rusty.isa.Instruction`
+
+    :return: array of bytes
+    :rtype: bytes
+    '''
     arg = _iordefault(instruction.args(), 0, 0) & PADDING_MASK
     opcode = ((instruction.opcode() & OPCODE_MASK) << 56)
     return struct.pack('<Q', opcode | arg)
 
 
 def encode_program(instructions: list[isa.Instruction]) -> bytes:
+    '''Encodes list of VM instructions to sequence of bytes
+
+    :param instructions: list of VM instructions
+    :type instructions: list[class:`rusty.isa.Instruction`]
+
+    :return: array of bytes
+    :rtype: bytes
+    '''
     return b''.join(map(encode_single, instructions))
 
 
 def parse_program(lines: list[str]) -> list[isa.Instruction]:
+    '''Parses textual program into list of VM instructions
+
+    :param lines: list of textual VM instructions
+    :type lines: list[str]
+
+    :return: list of VM instructions
+    :rtype: list[class:`rusty.isa.Instruction`]
+    '''
     instructions = []
     for line in lines:
         parts = line.strip().split(' ', 1)
@@ -89,6 +126,14 @@ def parse_program(lines: list[str]) -> list[isa.Instruction]:
 
 
 def decode_single(bytes: bytes) -> isa.Instruction:
+    '''Decodes 8 bytes to VM instruction.
+
+    :param bytes: 8 bytes
+    :type bytes: bytes
+
+    :return: VM instruction
+    :rtype: class:`rusty.isa.Instruction`
+    '''
     assert len(bytes) == 8
     raw_ins = struct.unpack('<Q', bytes)[0]
     opcode = isa.Opcode((raw_ins >> 56) & OPCODE_MASK)
@@ -103,5 +148,13 @@ def decode_single(bytes: bytes) -> isa.Instruction:
 
 
 def decode_program(bytes: bytes) -> list[isa.Instruction]:
+    '''Decodes bytes-sequence into list of VM instructions.
+
+    :param bytes: bytes-sequence
+    :type bytes: bytes
+
+    :return: list of VM instructions
+    :rtype: list[class:`rusty.isa.Instruction`]
+    '''
     return list(map(decode_single,
                     [ bytes[0 + i:8 + i] for i in range(0, len(bytes), 8) ]))
