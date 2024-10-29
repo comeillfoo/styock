@@ -290,7 +290,7 @@ class BinaryApplyInstruction(Instruction):
 
         :param self: instruction
         :type self: any subclass of class:`rusty.isa.BinaryApplyInstruction`
-        :param ctx: calculus context
+        :param ctx: calculation context
         :type ctx: class:`rusty.isa.Context`
 
         :return: false - VM should not stop after executing this type of
@@ -470,7 +470,7 @@ class UnaryApplyInstruction(Instruction):
 
         :param self: instance of unary VM instruction
         :type self: subclass of class:`rusty.isa.UnaryApplyInstruction`
-        :param ctx: calculus context
+        :param ctx: calculation context
         :type ctx: class:`rusty.isa.Context`
 
         :return: false - VM should not stop after executing this type of
@@ -623,7 +623,7 @@ class Load(Instruction):
 
         :param self: instance of Load instruction
         :type self: class:`rusty.isa.Load`
-        :param ctx: calculus context
+        :param ctx: calculation context
         :type ctx: class:`rusty.isa.Context`
 
         :return: false - VM should not stop after execution of the load
@@ -662,7 +662,7 @@ class Store(Instruction):
 
         :param self: instance of Store instruction
         :type self: class:`rusty.isa.Store`
-        :param ctx: calculus context
+        :param ctx: calculation context
         :type ctx: class:`rusty.isa.Context`
 
         :return: false - VM should not stop after execution of the store
@@ -701,10 +701,11 @@ class Call(Instruction):
 
         :param self: instance of Call instruction
         :type self: class:`rusty.isa.Call`
-        :param ctx: calculus context
+        :param ctx: calculation context
         :type ctx: class:`rusty.isa.Context`
 
-        :return: false - VM should not stop after execution of the store
+        :return: false - VM should not stop after execution of the call
+        instructions
         :rtype: bool
         '''
         ctx.frames.append(Frame(ctx.ip))
@@ -717,6 +718,10 @@ class Call(Instruction):
 
 
 class Return(Instruction):
+    '''Returns from a subprogram. Pops out the top of the call frames stack and
+    jumps the specified by the popped frame return address. If call frames stack
+    is empty then throws class:`rusty.traps.StackUnderflowTrap`.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.RET
@@ -725,6 +730,17 @@ class Return(Instruction):
         return []
 
     def execute(self, ctx: Context) -> bool:
+        '''Returns from a subprogram.
+
+        :param self: instance of Return instruction
+        :type self: class:`rusty.isa.Return`
+        :param ctx: calculation context
+        :type ctx: class:`rusty.isa.Context`
+
+        :return: false - VM should not stop after execution of the return
+        instructions
+        :rtype: bool
+        '''
         try:
             frame = ctx.frames.pop()
             ctx.ip = frame.return_address
@@ -738,6 +754,9 @@ class Return(Instruction):
 
 
 class Jump(Instruction):
+    '''Jumps to the address that is relative to the current IP by the number
+    that is encoded in this instruction as argument.
+    '''
     def __init__(self, arg: int):
         self.arg = force_uint64(arg)
 
@@ -757,6 +776,10 @@ class Jump(Instruction):
         return 1
 
 class JumpIfTrue(Instruction):
+    '''Pops boolean value from the operands stack and jumps to relative to
+    the current IP address if and only if popped value is not equal to zero.
+    Throws class:`rusty.traps.StackUnderflowTrap` if stack is empty.
+    '''
     def __init__(self, arg: int):
         self.arg = force_uint64(arg)
 
@@ -782,6 +805,8 @@ class JumpIfTrue(Instruction):
 
 
 class Stop(Instruction):
+    '''Stops the subsequent instructions execution.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.STOP
@@ -790,6 +815,17 @@ class Stop(Instruction):
         return []
 
     def execute(self, ctx: Context) -> bool:
+        '''Returns from a subprogram.
+
+        :param self: instance of Stop instruction
+        :type self: class:`rusty.isa.Stop`
+        :param ctx: calculation context
+        :type ctx: class:`rusty.isa.Context`
+
+        :return: true - VM should stop after execution of the stop
+        instructions
+        :rtype: bool
+        '''
         return True
 
     @classmethod
