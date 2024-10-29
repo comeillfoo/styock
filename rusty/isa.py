@@ -242,6 +242,9 @@ class Swap(Instruction):
 
 
 class Duplicate(Instruction):
+    '''Pushes onto the operands stack the copy of its top element. Throws
+    class:`rusty.traps.StackUnderflowTrap` if operands stack is empty.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.DUP
@@ -263,11 +266,37 @@ class Duplicate(Instruction):
 
 
 class BinaryApplyInstruction(Instruction):
+    '''Representation of every VM instruction that consumes two operands from
+    the stack and pushes some single number back.
+    '''
     @abstractmethod
     def _apply(self, a: np.uint64, b: np.uint64) -> np.uint64:
+        '''Consumes two numbers and produces a single one.
+
+        :param a: first operand
+        :type a: class:`np.uint64`
+        :param b: second operand
+        :type b: class:`np.uint64`
+
+        :return: result of applying f(a, b)
+        :rtype: class:`np.uint64`
+        '''
         raise NotImplementedError
 
     def execute(self, ctx: Context) -> bool:
+        '''Pops two operands from stack and passes them to callback. And result
+        of the callback is pushed on stack back. If the stack contained less than
+        2 elements then class:`rusty.traps.StackUnderflowTrap` would be thrown.
+
+        :param self: instruction
+        :type self: any subclass of class:`rusty.isa.BinaryApplyInstruction`
+        :param ctx: calculus context
+        :type ctx: class:`rusty.isa.Context`
+
+        :return: false - VM should not stop after executing this type of
+        instructions
+        :rtype: bool
+        '''
         try:
             b = ctx.operands_stack.pop()
             a = ctx.operands_stack.pop()
@@ -284,6 +313,8 @@ class BinaryApplyInstruction(Instruction):
         return 0
 
 class Add(BinaryApplyInstruction):
+    '''Adds 2 numbers from the operands stack and pushes result back.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.ADD
@@ -292,6 +323,8 @@ class Add(BinaryApplyInstruction):
         return a + b
 
 class Substract(BinaryApplyInstruction):
+    '''Substracts 2 numbers from the operands stack and pushes result back.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.SUB
@@ -300,6 +333,8 @@ class Substract(BinaryApplyInstruction):
         return a - b
 
 class Multiply(BinaryApplyInstruction):
+    '''Multiplies 2 numbers from the operands stack and pushes result back.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.MUL
@@ -308,6 +343,9 @@ class Multiply(BinaryApplyInstruction):
         return a * b
 
 class Divide(BinaryApplyInstruction):
+    '''Divides 2 numbers from the operands stack and pushes result back. If the
+    divider was 0 then class:`rusty.traps.ZeroDivisionTrap` would be thrown.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.DIV
@@ -318,6 +356,10 @@ class Divide(BinaryApplyInstruction):
         return a / b
 
 class Modulo(BinaryApplyInstruction):
+    '''Divides 2 numbers from the operands stack and pushes remainder of the
+    division back. If the divider was 0 then class:`rusty.traps.ZeroDivisionTrap`
+    would be thrown.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.MOD
@@ -328,6 +370,9 @@ class Modulo(BinaryApplyInstruction):
         return a % b
 
 class ShiftLeft(BinaryApplyInstruction):
+    '''Shifts left first operand by second operand positions and pushes result
+    back.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.SHL
@@ -336,6 +381,9 @@ class ShiftLeft(BinaryApplyInstruction):
         return a << b
 
 class ShiftRight(BinaryApplyInstruction):
+    '''Shifts right first operand by second operand positions and pushes result
+    back.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.SHR
@@ -345,6 +393,9 @@ class ShiftRight(BinaryApplyInstruction):
 
 
 class Maximum(BinaryApplyInstruction):
+    '''Finds maximum between 2 numbers from the operands stack and pushes result
+    back.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.MAX
@@ -353,6 +404,9 @@ class Maximum(BinaryApplyInstruction):
         return a if a > b else b
 
 class Minimum(BinaryApplyInstruction):
+    '''Finds minimum between 2 numbers from the operands stack and pushes result
+    back.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.MIN
@@ -361,6 +415,9 @@ class Minimum(BinaryApplyInstruction):
         return a if a < b else b
 
 class And(BinaryApplyInstruction):
+    '''Calculates bitwise AND between 2 numbers from the operands stack and
+    pushes result back.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.AND
@@ -369,6 +426,9 @@ class And(BinaryApplyInstruction):
         return a & b
 
 class Or(BinaryApplyInstruction):
+    '''Calculates bitwise OR between 2 numbers from the operands stack and
+    pushes result back.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.OR
@@ -377,6 +437,9 @@ class Or(BinaryApplyInstruction):
         return a | b
 
 class Xor(BinaryApplyInstruction):
+    '''Calculates XOR between 2 numbers from the operands stack and pushes result
+    back.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.XOR
@@ -386,14 +449,37 @@ class Xor(BinaryApplyInstruction):
 
 
 class UnaryApplyInstruction(Instruction):
+    '''Represents all unary VM instructions that pops a single number from the
+    operands stack and pushes some result back.
+    '''
     @abstractmethod
     def _apply(self, a: np.uint64) -> np.uint64:
+        '''Consumes single number and produces another one.
+
+        :param a: operand
+        :type a: class:`np.uint64`
+
+        :return: result of applying f(a)
+        :rtype: class:`np.uint64`
+        '''
         raise NotImplementedError
 
     def execute(self, ctx: Context) -> bool:
+        '''Pops single operand from the stack and pushes the result of the
+        callback back.
+
+        :param self: instance of unary VM instruction
+        :type self: subclass of class:`rusty.isa.UnaryApplyInstruction`
+        :param ctx: calculus context
+        :type ctx: class:`rusty.isa.Context`
+
+        :return: false - VM should not stop after executing this type of
+        instructions
+        :rtype: bool
+        '''
         try:
             a = ctx.operands_stack.pop()
-            ctx.operands_stack.append(a)
+            ctx.operands_stack.append(self._apply(a))
         except IndexError:
             raise traps.StackUnderflowTrap
         return False
@@ -406,6 +492,9 @@ class UnaryApplyInstruction(Instruction):
         return 0
 
 class Increment(UnaryApplyInstruction):
+    '''Pops a single number from the operands stack, increments it and pushes
+    result back - `a` -> `a + 1`.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.INC
@@ -414,6 +503,9 @@ class Increment(UnaryApplyInstruction):
         return a + 1
 
 class Decrement(UnaryApplyInstruction):
+    '''Pops a single number from the operands stack, decrements it and pushes
+    result back - `a` -> `a - 1`.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.DEC
@@ -422,6 +514,9 @@ class Decrement(UnaryApplyInstruction):
         return a - 1
 
 class Negate(UnaryApplyInstruction):
+    '''Pops a single number from the operands stack and pushes its arithmetic
+    negation back - `a` -> `-a`.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.NEG
@@ -430,6 +525,9 @@ class Negate(UnaryApplyInstruction):
         return -a
 
 class Not(UnaryApplyInstruction):
+    '''Pops a single number from the operands stack and pushes its logic
+    negation back - `a` -> `~a`.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.NOT
@@ -439,6 +537,9 @@ class Not(UnaryApplyInstruction):
 
 
 class LessThan(BinaryApplyInstruction):
+    '''Compares two operands from the stack and pushes 1 if first one is strictly
+    less than the second or zero.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.LT
@@ -447,6 +548,9 @@ class LessThan(BinaryApplyInstruction):
         return 1 if a < b else 0
 
 class LessOrEqual(BinaryApplyInstruction):
+    '''Compares two operands from the stack and pushes 1 if first one is less
+    than or equal to the second or zero.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.LE
@@ -455,6 +559,9 @@ class LessOrEqual(BinaryApplyInstruction):
         return 1 if a <= b else 0
 
 class Equal(BinaryApplyInstruction):
+    '''Compares two operands from the stack and pushes 1 if they are equal or
+    zero.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.EQ
@@ -463,6 +570,9 @@ class Equal(BinaryApplyInstruction):
         return 1 if a == b else 0
 
 class NotEqual(BinaryApplyInstruction):
+    '''Compares two operands from the stack and pushes 1 if they are not equal
+    or zero.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.NEQ
@@ -471,6 +581,9 @@ class NotEqual(BinaryApplyInstruction):
         return 1 if a != b else 0
 
 class GreaterThan(BinaryApplyInstruction):
+    '''Compares two operands from the stack and pushes 1 if first one is strictly
+    greater than the second or zero.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.GT
@@ -479,6 +592,9 @@ class GreaterThan(BinaryApplyInstruction):
         return 1 if a > b else 0
 
 class GreaterOrEqual(BinaryApplyInstruction):
+    '''Compares two operands from the stack and pushes 1 if first one is greater
+    than or equal to the second or zero.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.GE
@@ -488,6 +604,9 @@ class GreaterOrEqual(BinaryApplyInstruction):
 
 
 class Load(Instruction):
+    '''Pushes onto the operands stack the value of variable with the provided
+    identifier. Pushes zero if the variable with such identifier is not exist.
+    '''
     def __init__(self, variable_id: int):
         self.variable_id = force_uint64(variable_id)
 
@@ -499,6 +618,18 @@ class Load(Instruction):
         return [self.variable_id]
 
     def execute(self, ctx: Context) -> bool:
+        '''Looks up for the variable in the current call frame and pushes its
+        value onto the stack. If variable is not exist then zero is pushed.
+
+        :param self: instance of Load instruction
+        :type self: class:`rusty.isa.Load`
+        :param ctx: calculus context
+        :type ctx: class:`rusty.isa.Context`
+
+        :return: false - VM should not stop after execution of the load
+        instructions
+        :rtype: bool
+        '''
         variable_value = ctx.frames[-1].variables.get(self.variable_id, 0)
         ctx.operands_stack.append(variable_value)
         return False
@@ -509,6 +640,10 @@ class Load(Instruction):
 
 
 class Store(Instruction):
+    '''Stores operand from the stack as the new value of variable of the current
+    call frame with the provided identifier. If stack is empty throws
+    class:`rusty.traps.StackUnderflowTrap`.
+    '''
     def __init__(self, variable_id: int):
         self.variable_id = force_uint64(variable_id)
 
@@ -520,6 +655,20 @@ class Store(Instruction):
         return [self.variable_id]
 
     def execute(self, ctx: Context) -> bool:
+        '''Pops value from the operands stack. Stores it to the current call
+        frame as the value of the variable. The variable is identified by the
+        numerical identifier that is got from the instruction argument. Throws
+        class:`rusty.traps.StackUnderflowTrap` if the operands stack is empty.
+
+        :param self: instance of Store instruction
+        :type self: class:`rusty.isa.Store`
+        :param ctx: calculus context
+        :type ctx: class:`rusty.isa.Context`
+
+        :return: false - VM should not stop after execution of the store
+        instructions
+        :rtype: bool
+        '''
         try:
             variable_value = ctx.operands_stack.pop()
             ctx.frames[-1].variables[self.variable_id] = variable_value
@@ -533,6 +682,10 @@ class Store(Instruction):
 
 
 class Call(Instruction):
+    '''Calls a subprogram. Pushes a new frame onto the call frames stack. The
+    frame will use the current IP as the return address from the subprogram.
+    Jumps to the subprogram address (instruction's argument).
+    '''
     def __init__(self, arg: int):
         self.arg = force_uint64(arg)
 
@@ -544,6 +697,16 @@ class Call(Instruction):
         return [self.arg]
 
     def execute(self, ctx: Context) -> bool:
+        '''Calls a subprogram.
+
+        :param self: instance of Call instruction
+        :type self: class:`rusty.isa.Call`
+        :param ctx: calculus context
+        :type ctx: class:`rusty.isa.Context`
+
+        :return: false - VM should not stop after execution of the store
+        :rtype: bool
+        '''
         ctx.frames.append(Frame(ctx.ip))
         ctx.ip = ctx.ip - 1 + self.arg
         return False
