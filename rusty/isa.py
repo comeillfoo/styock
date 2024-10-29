@@ -83,7 +83,8 @@ def force_uint64(number: int) -> np.uint64:
     :param number: integer to convert
     :type number: int
 
-    :return: TODO
+    :return: integer that fits into unsigned integer 64-bit
+    :rtype: class:`np.uint64`
     '''
     if number < 0:
         number += (1 << 64)
@@ -93,25 +94,55 @@ def force_uint64(number: int) -> np.uint64:
 
 
 class Instruction(ABC):
+    '''Abstract VM instruction.
+    '''
     @classmethod
     @abstractmethod
     def opcode(cls) -> Opcode:
+        '''Returns opcode of instruction cause of its type.
+
+        :return: instruction's opcode
+        :rtype: class:`Opcode`
+        '''
         raise NotImplementedError
 
     @abstractmethod
     def args(self) -> list[np.uint64]:
+        '''Returns instruction's arguments.
+
+        :return: list of instruction's arguments as unsigned 64-bit integers
+        :rtype: list[class:`np.uint64`]
+        '''
         raise NotImplementedError
 
     @abstractmethod
     def execute(self, ctx: Context) -> bool:
+        '''Instruction's execution routine.
+
+        :param ctx: calculation context
+        :type ctx: class:`Context`
+
+        :return: should stop subsequent execution
+        :rtype: bool
+        '''
         raise NotImplementedError
 
     @classmethod
     @abstractmethod
     def nargs(cls) -> int:
+        '''Returns number of arguments that instruction uses.
+
+        :return: number of arguments
+        :rtype: int
+        '''
         raise NotImplementedError
 
     def __repr__(self) -> str:
+        '''Returns string representation of the instruction.
+
+        :return: string representation of instruction
+        :rtype: str
+        '''
         components = [type(self).__name__]
         if self.nargs() > 0:
             components.append('(')
@@ -121,6 +152,8 @@ class Instruction(ABC):
 
 
 class NoOperation(Instruction):
+    '''No operation instruction - does nothing.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.NOP
@@ -137,6 +170,8 @@ class NoOperation(Instruction):
 
 
 class Push(Instruction):
+    '''Pushes its argument onto the operands stack.
+    '''
     def __init__(self, arg: int):
         self.arg = force_uint64(arg)
 
@@ -157,6 +192,10 @@ class Push(Instruction):
 
 
 class Pop(Instruction):
+    '''Pops element from the operands stack. Throws
+    class:`rusty.traps.StackUnderflowTrap` if there are not enough elements on
+    the stack.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.POP
@@ -177,6 +216,9 @@ class Pop(Instruction):
 
 
 class Swap(Instruction):
+    '''Pops two elements from the stack and pushes them back in different order.
+    Throws class:`rusty.traps.StackUnderflowTrap` if there are no enough elements.
+    '''
     @classmethod
     def opcode(cls) -> Opcode:
         return Opcode.SWAP
