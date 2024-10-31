@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+'''Главный модуль пакета компилятора языка Rusty (),
+транслирующего подмножество языка Rust в инструкции стековой виртуальной машины
+в виде текста.
+'''
 import os
 import sys
 import errno
@@ -14,6 +18,12 @@ from .backend import process
 
 
 def args_parser() -> argparse.ArgumentParser:
+    '''Builds arguments parser that supports options for redirecting output to
+    specific file, enumerating every instruction for debugging and so on.
+
+    :return: arguments parser
+    :rtype: class:`argparse.ArgumentParser`
+    '''
     p = argparse.ArgumentParser('rustyc')
 
     # Options:
@@ -30,6 +40,13 @@ def args_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    '''Main routine that implements compiler that parses input subrust program
+    (taken from the argument) and translates it into textual stack-based VM
+    instructions.
+
+    :return: error code - zero on success
+    :rtype: int
+    '''
     args = args_parser().parse_args()
     if not os.path.isfile(args.file):
         print('File', args.file, 'not found', file=sys.stderr)
