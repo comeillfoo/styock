@@ -1,4 +1,16 @@
 #!/usr/bin/env python3
+'''Модуль, реализующий трансляцию подмножества языка Rust в инструкции стековой
+виртуальной машины. На данном (первом) этапе трансляции все метки в программе
+остаются нетронутыми - т.е. в виде текста.
+
+Реализация трансляции взята напрямую из документации ANTLR4, в которой класс
+Listener поддерживает словарь (map) между *контекстом* распарсенной конструкции
+языка и строкой с результирующими инструкциями. Т.е. класс обработчик кэширует
+соответствия между входным набором токеном и результатом их трансляции.
+
+Так как *контекст* представляет собой объект, хэш которого это уникальный
+идентификатор данного объекта в памяти, то коллизии в данном словаре исключены.
+'''
 from typing import Optional
 from dataclasses import dataclass
 
@@ -8,24 +20,57 @@ from .libs.RustyParser import RustyParser
 
 @dataclass
 class VariableMeta:
+    '''Stores metadata for a single variable. Metadata consists of variable's
+    numerical identifier and sign of its mutability. Numerical identifiers are
+    used for `store` and `load` VM instructions.
+    '''
     identifier: int = 0
     mutable: bool = False
 
 @dataclass
 class FnMeta:
+    '''Stores metadata for a single function. Metadata consists of function's
+    name, its parameters and local variables. Parameters and local variables are
+    represented with maps (dictionaries) that keeps matching between variable's
+    name and variable's metadata (numerical identifier).
+
+    Parameters and local variables are enumerated end-to-end. Thus, numerical
+    identifier of every local variable is strictly greater than every identifier
+    of every function parameter.
+    '''
     name: str
     parameters: dict[str, VariableMeta]
     locals: dict[str, VariableMeta]
 
 
 def finstr(ins: str) -> str:
+    '''Formats program's instruction by prepending tab to distinguish them from
+    labels.
+
+    :param ins: single VM instruction
+    :type ins: str
+
+    :return: line with tab and instruction
+    :rtype: str
+    '''
     return '\t' + ins
 
+
 def flabel(lbl: str) -> str:
+    '''Formats program's label to distinguish them from the instructions.
+
+    :param lbl: program's label
+    :type lbl: str
+
+    :return: line with label name and colon (:) at the end
+    :rtype: str
+    '''
     return lbl + ':'
 
 
 class FERListener(RustyListener):
+    '''Handlers for parse rules
+    '''
     def __init__(self):
         super().__init__()
         self.tree = {}
@@ -35,6 +80,15 @@ class FERListener(RustyListener):
         self.loop_labels = []
 
     def next_label(self, name: str) -> str:
+        '''Generates unique label with specified name. Every call increments
+        internal labels counter.
+
+        :param name: meaningful name of the label
+        :type name: str
+
+        :return: label
+        :rtype: str
+        '''
         salt = f'.{self.counter}_'
         pepper = '_utlbl'
         self.counter += 1
