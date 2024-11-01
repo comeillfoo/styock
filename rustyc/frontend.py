@@ -69,7 +69,15 @@ def flabel(lbl: str) -> str:
 
 
 class FERListener(RustyListener):
-    '''Handlers for parse rules
+    '''Handlers for parse rules. An observer in the oberver pattern. Builds a map
+    of translations from input subset of Rust to VM instructions.
+
+    At the beginning of every module (crate) puts `call main` and `stop`:
+    ```
+    0: call main
+    1: stop
+    2: ...
+    ```
     '''
     def __init__(self):
         super().__init__()
@@ -312,6 +320,16 @@ class FERListener(RustyListener):
         return super().exitFalseLiteral(ctx)
 
     def _get_variable(self, variable_name: str) -> VariableMeta:
+        '''Returns variable's metadata by its name.
+
+        :param self: instance of listener
+        :type self: class:`rustyc.frontend.FERListener`
+        :param variable_name: variable's name
+        :type variable_name: str
+
+        :return: variable's metadata
+        :rtype: class:`rustyc.frontend.VariableMeta`
+        '''
         parameters = self.functions[self.current_function].parameters
         try:
             return parameters[variable_name]
@@ -405,6 +423,19 @@ class FERListener(RustyListener):
     def exitLetStatement(self, ctx: RustyParser.LetStatementContext):
         def _add_local_variable(variable_name: str,
                                 is_mutable: bool = False) -> VariableMeta:
+            '''Builds local variable's metadata and adds it to the current
+            function. As functions are the only top-level things and functions
+            cannot be declared inside functions they could be traced with single
+            variable current_function.
+
+            :param variable_name: local variable name
+            :type variable_name: str
+            :param is_mutable: is it allowed to change variable value
+            :type is_mutable: bool, default False
+
+            :return: created variable's metadata
+            :rtype: class:`rustyc.frontend.VariableMeta`
+            '''
             current_function = self.functions[self.current_function]
             if variable_name in current_function.parameters:
                 raise Exception # variable already defined as parameter
@@ -442,7 +473,15 @@ class FERListener(RustyListener):
 
 # Implement function rule
     def enterFunction(self, ctx: RustyParser.FunctionContext):
-        def _list_parameters(ctx: RustyParser.FunctionContext) -> dict[str, int]:
+        def _list_parameters(ctx: RustyParser.FunctionContext) -> dict[str, VariableMeta]:
+            '''Builds map of parameter name to its metadata as a variable
+
+            :param ctx: context for function rule
+            :type ctx: class:`RustyParser.FunctionContext`
+
+            :return: map of function's parameters
+            :rtype: dict[str, class:`rustyc.frontend.VariableMeta`]
+            '''
             if ctx.functionParams() is None:
                 return {}
 
