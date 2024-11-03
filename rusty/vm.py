@@ -52,7 +52,7 @@ class VM:
     4. control the execution of the instructions (execute single, or until stop)
     '''
     def __init__(self, debug: bool = False):
-        self.ctx = isa.Context()
+        self.ctx = None
         self.program = []
         self.is_halted = True
         self.breakpoints = []
@@ -69,6 +69,7 @@ class VM:
         '''
         self.program = program
         self.is_halted = False
+        self.ctx = isa.Context()
 
     def info_breakpoints(self) -> list[Tuple[int, isa.Instruction]]:
         '''Lists created breakpoints.
@@ -126,7 +127,7 @@ class VM:
         :return: instruction at address
         :rtype: class:`rusty.isa.Instruction`
         '''
-        if address > len(self.program) or address < 0:
+        if address >= len(self.program) or address < 0:
             raise ValueError # TODO: define own exceptions
         return self.program[address]
 

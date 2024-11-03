@@ -150,6 +150,11 @@ class Instruction(ABC):
             components.append(')')
         return ''.join(components)
 
+    def __eq__(self, other):
+        return self.opcode() == other.opcode() \
+            and self.nargs() == other.nargs() \
+            and self.args() == other.args()
+
 
 class NoOperation(Instruction):
     '''No operation instruction - does nothing.
