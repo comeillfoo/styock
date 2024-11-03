@@ -200,7 +200,11 @@ class FERListener(RustyListener):
             (True, False): 'and',
             (False, True): 'or'
         }.get((ctx.ANDAND() is not None, ctx.OROR() is not None))
-        self.tree[ctx] = finstr(instruction)
+        self.tree[ctx] = '\n'.join([
+            self.tree[ctx.expression()[0]],
+            self.tree[ctx.expression()[1]],
+            finstr(instruction)
+        ])
         return super().exitLazyBooleanExpr(ctx)
 
 # Implement callParams
@@ -304,7 +308,12 @@ class FERListener(RustyListener):
 
 # Implement expression alternatives
     def exitIntegerLiteral(self, ctx: RustyParser.IntegerLiteralContext):
-        self.tree[ctx] = finstr('push ' + str(ctx.INTEGER_LITERAL()))
+        integer_literal = str(ctx.INTEGER_LITERAL())
+        for signedness in ('u', 'i'):
+            for bit_depth in ('8', '16', '32', '64', '128', 'size'):
+                integer_literal = integer_literal.replace(signedness + bit_depth,
+                                                          '')
+        self.tree[ctx] = finstr('push ' + integer_literal)
         return super().exitIntegerLiteral(ctx)
 
     def exitFloatLiteral(self, ctx: RustyParser.FloatLiteralContext):
