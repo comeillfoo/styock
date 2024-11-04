@@ -1,0 +1,21 @@
+@startuml
+    queue "Input Char Stream" as stdin
+    participant Lexer as lex
+    participant Parser as parser
+    participant Listener as listener
+    participant Main as main
+    queue Output as stdout
+
+    stdin <- lex : get next character
+    stdin --> lex
+    lex -> lex : consume character(s)
+    lex -> parser : produce tokens
+    parser -> listener : call enter/exit hook
+    listener -> listener : translate context\nto instructions
+    parser <-- listener
+    parser <- main : get root rule\nparsing context
+    parser --> main
+    listener <- main : get translation with\nroot rule parsing context
+    listener --> main
+    main -> stdout : print translation
+@enduml
