@@ -1,8 +1,6 @@
 # styock
 
-## Architecture
-
-![styok-arch](/styok-arch.jpg)
+Короче, мне влом тут что-то внятное писать. Все есть в отчете в гугл-доке.
 
 ## Examples
 

@@ -1,0 +1,36 @@
+@startuml
+artifact "Subset Rust program" as subrust
+node "Python 3 VM Instance" as pyvm1 {
+  node "Compiler" {
+    node "Frontend" {
+      [lexer]
+      artifact tokens
+      [parser]
+      [listener]
+      artifact "VM program\nwith unresolved labels" as ir
+    }
+    [backend]
+  }
+}
+artifact "Textual VM program" as txtins
+
+subrust -ri-> lexer
+lexer -ri-> tokens
+tokens -up-> parser
+parser -le- listener : calling hooks
+listener -up-> ir
+ir -ri-> backend
+backend --> txtins
+
+artifact "Binary VM program" as binins
+node "Python 3 VM Instance" as pyvm2 {
+  node "Stack-based VM" {
+    [encoder]
+    [interpreter]
+  }
+}
+
+txtins --> encoder
+encoder --> binins
+binins --> interpreter
+@enduml

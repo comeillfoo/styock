@@ -1,0 +1,37 @@
+@startuml
+left to right direction
+actor User as u
+package VM {
+  usecase "Load program" as load
+  usecase "Execute next instruction" as next
+  usecase "Run till stop or breakpoint" as run
+  usecase "Continue execution till stop or breakpoint" as continue
+  usecase "Manage breakpoints" as bps
+  usecase "Place breakpoint" as place
+  usecase "Delete breakpoint" as del
+  usecase "List breakpoints" as list
+  usecase "View state" as view
+  usecase "View current IP" as view_ip
+  usecase "View instruction at address" as view_ins
+  usecase "View instructions at addresses" as view_inss
+  usecase "View operands stack" as view_ops
+  usecase "View call frames" as view_frames
+}
+
+u --> load
+u --> next
+u --> run
+u --> continue
+u --> bps
+u --> view
+
+bps <.. place : "<<extends>>"
+bps <.. del : "<<extends>>"
+bps <.. list : "<<extends>>"
+
+view <.. view_ip : "<<extends>>"
+view <.. view_ins : "<<extends>>"
+view <.. view_inss : "<<extends>>"
+view <.. view_ops : "<<extends>>"
+view <.. view_frames : "<<extends>>"
+@enduml
