@@ -1,0 +1,16 @@
+@startuml
+start
+:parse command-line arguments;
+group frontend stage
+:read file;
+:tokenize characters from file;
+:parse tokens;
+:generate parse-tree;
+:translate parse-tree into\nVM program with unresolved labels;
+end group
+group backend stage
+:enumerate all labels;
+:resolve labels into numerical addresses\nfor call, jift and jmp instructions;
+end group
+end
+@enduml
