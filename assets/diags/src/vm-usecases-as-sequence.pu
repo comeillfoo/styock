@@ -1,0 +1,65 @@
+@startuml
+actor User as usr
+participant VM as vm
+
+usr -> vm : load program
+usr <-- vm
+
+... ...
+
+usr -> vm : execute next instruction
+usr <-- vm
+
+... ...
+
+usr -> vm : run till stop or breakpoint
+... executing instructions ...
+usr <-- vm
+
+... ...
+
+usr -> vm : continue execution till stop or breakpoint
+... executing instructions ...
+usr <-- vm
+
+... ...
+
+usr -> vm : place breakpoint
+usr <-- vm : breakpoint id
+
+... ...
+
+usr -> vm : delete breakpoint by id
+vm <-- usr
+
+... ...
+
+usr -> vm : list breakpoints
+usr <-- vm : list of breakpoints' ids and line numbers
+
+... ...
+
+usr -> vm : view call frames
+usr <-- vm : list of call frames with return addresses and local variables
+
+... ...
+
+usr -> vm : view operands stack
+usr <-- vm : list of operands on the stack
+
+... ...
+
+usr -> vm : view instructions at [begin; end)
+usr <-- vm : list of instructions at addresses [begin; end)
+
+... ...
+
+usr -> vm : view instruction at address
+usr <-- vm : instruction at specified address
+
+... ...
+
+usr -> vm : view current instruction pointer
+usr <-- vm : current address that instruction pointer points at
+
+@enduml
